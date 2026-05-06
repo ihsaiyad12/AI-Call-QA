@@ -72,7 +72,7 @@ export const db = {
       
       const updateData = { ...data };
       
-      const lead = await Lead.findByIdAndUpdate(id, updateData, { new: true });
+      const lead = await Lead.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });
       if (!lead) return null;
       
       const obj = lead.toObject();

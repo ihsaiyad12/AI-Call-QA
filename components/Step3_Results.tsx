@@ -38,6 +38,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
   const [pushStatus, setPushStatus] = useState<'idle' | 'pushing' | 'success' | 'error'>('idle');
   const [pushError, setPushError] = useState('');
   const [currentVerdict, setCurrentVerdict] = useState(analysisResult?.verdict);
+  const [currentScore, setCurrentScore] = useState(analysisResult?.score || 0);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
 
@@ -94,6 +95,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
         score: 0 // Optional: set score to 0 when disqualified manually
       });
       setCurrentVerdict('Not Qualified');
+      setCurrentScore(0);
       onRefresh?.();
       alert('Lead has been disqualified.');
     } catch (err) {
@@ -109,12 +111,14 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
     if (!confirm('Are you sure you want to qualify this lead? This will mark it as Good to Go (SQL).')) return;
     
     setIsQualifying(true);
+    const newScore = Math.max(score, 70);
     try {
       await axios.patch(`/api/leads/${leadId}`, {
         verdict: 'Good to Go (SQL)',
-        score: Math.max(score, 70) // Boost score to at least 70
+        score: newScore // Boost score to at least 70
       });
       setCurrentVerdict('Good to Go (SQL)');
+      setCurrentScore(newScore);
       onRefresh?.();
       alert('Lead has been qualified.');
     } catch (err) {
@@ -200,7 +204,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
         {/* Score + Risk strip */}
         <div style={styles.scoreStrip}>
           <div style={styles.scoreBlock}>
-            <span style={styles.scoreNumber}>{calculatedScore}<span style={{ fontSize: '16px', fontWeight: 400 }}>/100</span></span>
+            <span style={styles.scoreNumber}>{currentScore}<span style={{ fontSize: '16px', fontWeight: 400 }}>/100</span></span>
             <span style={styles.scoreLabel}>QA Score</span>
           </div>
           <div style={styles.scoreDivider} />
@@ -209,8 +213,8 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
             <div style={styles.barTrack}>
               <div style={{
                 ...styles.barFill,
-                width: `${score}%`,
-                backgroundColor: score >= 70 ? 'var(--color-green)' : score >= 50 ? 'var(--color-amber)' : 'var(--color-red)',
+                width: `${currentScore}%`,
+                backgroundColor: currentScore >= 70 ? 'var(--color-green)' : currentScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)',
               }} />
             </div>
             <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>

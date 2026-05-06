@@ -136,12 +136,11 @@ export default function Home() {
       const scoreResponse = await axios.post('/api/score', {
         transcript: finalTranscript,
         provider: selectedProvider,
-        jobTitle: leadData.jobTitle,
-        category: leadData.category,
+        leadId: selectedLeadId,
+        ...leadData
       }, { signal });
 
       const analysisData = scoreResponse.data;
-      setAnalysisResult(analysisData);
       setProcessingState({ type: 'scoring', progress: 100, error: null });
 
       // 3. Save to Database
@@ -161,6 +160,8 @@ export default function Home() {
         ...analysisData,
         score: calculatedScore > 0 ? calculatedScore : analysisData.score
       };
+
+      setAnalysisResult(normalizedData);
 
       let leadResponse;
 

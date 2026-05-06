@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scoreCall } from '@/lib/services/aiOrchestrator';
 import { z } from 'zod';
 import db from '@/lib/db';
+import { LeadData } from '@/types';
 
 const scoreSchema = z.object({
   transcript: z.string().min(10, "Transcript is too short"),
   provider: z.enum(['groq', 'gemini', 'openai', 'claude']),
   leadId: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
   jobTitle: z.string().optional(),
   category: z.string().optional(),
+  employeeCount: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,9 +29,52 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const { transcript, provider, leadId, jobTitle, category } = validation.data;
-    console.log(`[score] category=${category} provider=${provider}`);
-    const result = await scoreCall(transcript, provider, jobTitle, category);
+    const { 
+      transcript, 
+      provider, 
+      leadId, 
+      jobTitle, 
+      category,
+      firstName,
+      lastName,
+      email,
+      phone,
+      employeeCount
+    } = validation.data;
+
+    let enrichedLeadData: Partial<LeadData> = {
+      jobTitle,
+      category,
+      firstName,
+      lastName,
+      email,
+      phone,
+      employeeCount
+    };
+
+    // If leadId is provided, fetch latest data from DB to ensure accuracy
+    if (leadId) {
+      try {
+        const lead = await db.lead.findUnique(leadId);
+        if (lead) {
+          enrichedLeadData = {
+            ...enrichedLeadData,
+            firstName: lead.firstName || enrichedLeadData.firstName,
+            lastName: lead.lastName || enrichedLeadData.lastName,
+            email: lead.email || enrichedLeadData.email,
+            phone: lead.phone || enrichedLeadData.phone,
+            jobTitle: lead.jobTitle || enrichedLeadData.jobTitle,
+            category: lead.category || enrichedLeadData.category,
+            employeeCount: lead.employeeCount || enrichedLeadData.employeeCount,
+          };
+        }
+      } catch (err) {
+        console.error(`[score] Failed to fetch lead ${leadId}:`, err);
+      }
+    }
+
+    console.log(`[score] category=${enrichedLeadData.category} provider=${provider} lead=${enrichedLeadData.firstName} ${enrichedLeadData.lastName}`);
+    const result = await scoreCall(transcript, provider, enrichedLeadData);
 
     return NextResponse.json(result);
   } catch (error: any) {

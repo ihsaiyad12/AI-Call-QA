@@ -1,5 +1,5 @@
 import { scoreWithGroq, scoreWithGemini, scoreWithOpenAI, scoreWithClaude } from './aiProviders';
-import { AIProvider, AnalysisResult } from '@/types';
+import { AIProvider, AnalysisResult, LeadData } from '@/types';
 
 export const PROVIDERS: Record<string, AIProvider> = {
   GROQ: 'groq',
@@ -11,18 +11,17 @@ export const PROVIDERS: Record<string, AIProvider> = {
 export const scoreCall = async (
   transcript: string,
   provider: AIProvider,
-  jobTitle?: string,
-  category?: string
+  leadData?: Partial<LeadData>
 ): Promise<AnalysisResult> => {
   switch (provider) {
     case PROVIDERS.GROQ:
-      return await scoreWithGroq(transcript, jobTitle, category);
+      return await scoreWithGroq(transcript, leadData);
     case PROVIDERS.GEMINI:
-      return await scoreWithGemini(transcript, jobTitle, category);
+      return await scoreWithGemini(transcript, leadData);
     case PROVIDERS.OPENAI:
-      return await scoreWithOpenAI(transcript, jobTitle, category);
+      return await scoreWithOpenAI(transcript, leadData);
     case PROVIDERS.CLAUDE:
-      return await scoreWithClaude(transcript, jobTitle, category);
+      return await scoreWithClaude(transcript, leadData);
     default:
       throw new Error(`Unsupported AI provider: ${provider}`);
   }
