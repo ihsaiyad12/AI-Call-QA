@@ -39,6 +39,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
   const [pushError, setPushError] = useState('');
   const [currentVerdict, setCurrentVerdict] = useState(analysisResult?.verdict);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
+  const [isQualifying, setIsQualifying] = useState(false);
 
   if (!analysisResult) return null;
 
@@ -100,6 +101,27 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
       alert('Failed to update lead status. Please try again.');
     } finally {
       setIsDisqualifying(false);
+    }
+  };
+
+  const handleQualify = async () => {
+    if (!leadId) return;
+    if (!confirm('Are you sure you want to qualify this lead? This will mark it as Good to Go (SQL).')) return;
+    
+    setIsQualifying(true);
+    try {
+      await axios.patch(`/api/leads/${leadId}`, {
+        verdict: 'Good to Go (SQL)',
+        score: Math.max(score, 70) // Boost score to at least 70
+      });
+      setCurrentVerdict('Good to Go (SQL)');
+      onRefresh?.();
+      alert('Lead has been qualified.');
+    } catch (err) {
+      console.error('Qualification failed:', err);
+      alert('Failed to update lead status. Please try again.');
+    } finally {
+      setIsQualifying(false);
     }
   };
 
@@ -299,34 +321,64 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                 )}
               </div>
 
-              {/* Manual Disqualification Button (Only for SQL/Borderline) */}
-              {(currentVerdict === 'Good to Go (SQL)' || currentVerdict === 'Borderline') && (
-                <button
-                  onClick={handleDisqualify}
-                  disabled={isDisqualifying}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--color-red)',
-                    backgroundColor: 'white',
-                    color: 'var(--color-red)',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-red-bg)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                >
-                  <XCircle size={16} />
-                  {isDisqualifying ? 'Disqualifying...' : 'Disqualify Lead'}
-                </button>
-              )}
+              {/* Manual Qualification & Disqualification Buttons */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {currentVerdict !== 'Good to Go (SQL)' && (
+                  <button
+                    onClick={handleQualify}
+                    disabled={isQualifying}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--color-green)',
+                      backgroundColor: 'white',
+                      color: 'var(--color-green)',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-green-bg)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                  >
+                    <CheckCircle2 size={16} />
+                    {isQualifying ? 'Qualifying...' : 'Qualify Lead'}
+                  </button>
+                )}
+
+                {currentVerdict !== 'Not Qualified' && (
+                  <button
+                    onClick={handleDisqualify}
+                    disabled={isDisqualifying}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--color-red)',
+                      backgroundColor: 'white',
+                      color: 'var(--color-red)',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-red-bg)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                  >
+                    <XCircle size={16} />
+                    {isDisqualifying ? 'Disqualifying...' : 'Disqualify Lead'}
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
