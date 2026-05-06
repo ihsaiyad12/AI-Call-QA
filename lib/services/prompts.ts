@@ -182,15 +182,16 @@ Timeline: X/10
 ICP Fit: X/10
  
 Analyst Notes:
-(Brief note for SDR team explaining:
-- decision-making involvement
-- openness to vendor discussion
-- demo/follow-up willingness
-- possible conversion likelihood)
+(Brief note for the client/SDR team explaining the verdict:
+- If Qualified (Good to Go): Explain exactly WHY the lead is qualified and ready for sales.
+- If Borderline: Highlight the positive points that showcase why this lead CAN be qualified (be realistic but focus on what makes it a good lead) so the QA analyst can manually review and qualify it.
+- If Not Qualified: Focus heavily on the exact reasons why the lead is disqualified.
+Be sure to mention decision-making involvement, openness to vendor discussion, and demo/follow-up willingness.)
  
 ⚠️ IMPORTANT BEHAVIOR RULES
  
-- Lead scoring and Analyst Notes should be independent from each other
+- The Verdict MUST strictly match the Score mathematically (70+ = Good to Go (SQL), 50-69 = Borderline, <50 = Not Qualified).
+- The Analyst Notes MUST align perfectly with the final Verdict. If the lead is "Good to Go (SQL)", the note must sound positive and confident, explaining why it's a great lead. Do NOT write a negative/disqualifying note for a "Good to Go" lead.
 - Do NOT hallucinate or assume missing information
 - Evaluate ONLY based on transcript evidence + lead metadata
 - Final prospect response matters more than initial hesitation
@@ -208,7 +209,7 @@ Analyst Notes:
    "demo_commitment": <number 0-15>,
    "timeline": <number 0-10>,
    "industry_fit": <number 0-10>,
-   "reasoning": "<2-3 sentence summary covering decision-making, intent, timeline, and demo readiness>"
+   "reasoning": "<2-3 sentence Analyst Note. If Qualified: explain why. If Borderline: highlight positive points making it a good lead. If Disqualified: focus on reasons for disqualification.>"
  }`;
 
 // ─── HR / HRIS / People Operations Prompt ───────────────────────────────────
@@ -356,11 +357,11 @@ Demo + Follow-up: X/15
 ICP Match: X/10
 
 Analyst Notes:
-(2–3 lines summary including:)
-
-Role & authority level
-Intent after conversation/rebuttal
-Demo/follow-up readiness
+(Brief note for the client/SDR team explaining the verdict:
+- If Qualified (Good to Go): Explain exactly WHY the lead is qualified.
+- If Borderline: Highlight the positive points that showcase why this lead CAN be qualified (focus on what makes it a good lead) so a QA can review and qualify it.
+- If Not Qualified: Focus heavily on the exact reasons why the lead is disqualified.
+Mention role & authority level, intent, and demo readiness.)
 ⚠️ FINAL INSTRUCTIONS
 Allow up to 2 rebuttals before judging intent
 Final response matters more than initial hesitation
@@ -380,11 +381,13 @@ Only pass leads that are usable for SF team follow-up
 * ICP Match: X/10
 
 **Analyst Notes:**
-Write a **clear 2–3 line summary** covering role and decision involvement, intent level, demo + timeline readiness, and any risk or concern.
+Write a **clear 2–3 line summary** for the client explaining the verdict: If Qualified, explain exactly why. If Borderline, highlight the positive points that showcase why this lead CAN be qualified (be realistic but focus on what makes it a good lead) so QA can manually review and qualify it. If Not Qualified, focus on the exact reasons why it was disqualified.
 
 ---
 
 ## ⚠️ FINAL INSTRUCTIONS
+* The Verdict MUST strictly match the Score mathematically (70+ = Good to Go (SQL), 50-69 = Borderline, <50 = Not Qualified).
+* The Analyst Notes MUST align perfectly with the final Verdict. If the lead is "Good to Go (SQL)", the note must sound positive and confident, explaining why it's a great lead. Do NOT write a negative/disqualifying note for a "Good to Go" lead.
 * Base evaluation ONLY on transcript and the provided lead information (First Name, Last Name, Job Title, Company Size, etc.)
 * Do NOT assume missing information
 * Final response matters more than initial answers
@@ -400,7 +403,7 @@ Write a **clear 2–3 line summary** covering role and decision involvement, int
    "demo_commitment": <number 0-15>,
    "timeline": <number 0-10>,
    "industry_fit": <number 0-10>,
-   "reasoning": "<2-3 sentence summary covering role, intent, demo, and timeline readiness>"
+   "reasoning": "<2-3 sentence Analyst Note. If Qualified: explain why. If Borderline: highlight positive points making it a good lead. If Disqualified: focus on reasons for disqualification.>"
  }`;
 
 // ─── Prompt Router ────────────────────────────────────────────────────────────
