@@ -67,7 +67,12 @@ export async function PATCH(
 
     // Ensure score matches sum of sub-metrics
     const calculatedScore = nIntent + nAuthority + nDemo + nTimeline + nIndustry;
-    const finalScore = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
+    let finalScore = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
+
+    // CRITICAL: If verdict is "Not Qualified", force score to 0 to ensure consistency
+    if (verdict === 'Not Qualified') {
+      finalScore = 0;
+    }
 
     // Normalize AI provider
     const finalAiProvider = aiProvider || undefined; // Don't overwrite with null if missing in update

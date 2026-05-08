@@ -19,6 +19,8 @@ interface AnalyticsData {
     analyzedLeads: number;
     pushedLeads: number;
     disqualifiedLeads: number;
+    pushedToday: number;
+    analyzedToday: number;
   };
   agentPerformance: Array<{
     agentName: string;
@@ -264,6 +266,41 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
         <div className="saas-card" style={styles.kpiCard}>
           <div style={styles.kpiHeader}>
+            <span style={styles.kpiLabel}>Pushed to CRM (Total)</span>
+            <CloudUpload size={16} color="var(--color-text-muted)" />
+          </div>
+          <div style={styles.kpiBody}>
+            <h2 style={styles.kpiValue}>{data.kpis.pushedLeads}</h2>
+            <span style={styles.kpiTrendPositive}>
+              <ArrowUpRight size={14} /> 15% vs last month
+            </span>
+          </div>
+        </div>
+
+        <div className="saas-card" style={{ ...styles.kpiCard, borderLeft: '4px solid var(--color-purple)' }}>
+          <div style={styles.kpiHeader}>
+            <span style={styles.kpiLabel}>Today's Pushed (EST)</span>
+            <Target size={16} color="var(--color-purple)" />
+          </div>
+          <div style={styles.kpiBody}>
+            <h2 style={styles.kpiValue}>{data.kpis.pushedToday}</h2>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>leads synced today</span>
+          </div>
+        </div>
+
+        <div className="saas-card" style={{ ...styles.kpiCard, borderLeft: '4px solid var(--color-blue)' }}>
+          <div style={styles.kpiHeader}>
+            <span style={styles.kpiLabel}>Today's Analyzed (EST)</span>
+            <TrendingUp size={16} color="var(--color-blue)" />
+          </div>
+          <div style={styles.kpiBody}>
+            <h2 style={styles.kpiValue}>{data.kpis.analyzedToday}</h2>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>calls reviewed today</span>
+          </div>
+        </div>
+
+        <div className="saas-card" style={styles.kpiCard}>
+          <div style={styles.kpiHeader}>
             <span style={styles.kpiLabel}>Qualified Rate (SQL)</span>
             <Target size={16} color="var(--color-text-muted)" />
           </div>
@@ -271,19 +308,6 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
             <h2 style={styles.kpiValue}>{conversionRate}%</h2>
             <span style={styles.kpiTrendNegative}>
               <ArrowDownRight size={14} /> 2% vs last month
-            </span>
-          </div>
-        </div>
-
-        <div className="saas-card" style={styles.kpiCard}>
-          <div style={styles.kpiHeader}>
-            <span style={styles.kpiLabel}>Pushed to CRM</span>
-            <CloudUpload size={16} color="var(--color-text-muted)" />
-          </div>
-          <div style={styles.kpiBody}>
-            <h2 style={styles.kpiValue}>{data.kpis.pushedLeads}</h2>
-            <span style={styles.kpiTrendPositive}>
-              <ArrowUpRight size={14} /> 15% vs last month
             </span>
           </div>
         </div>
@@ -623,7 +647,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   // --- KPI CARDS ---
   kpiGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px'
+    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px'
   },
   kpiCard: {
     padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px'

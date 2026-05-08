@@ -114,12 +114,34 @@ export async function GET(req: Request) {
       notQualified: verdictDistribution.find(v => v.verdict === 'Not Qualified')?.count || 0,
     };
 
+    // 4. Today's Stats (EST)
+    const todayEST = new Date().toLocaleDateString("en-US", {
+      timeZone: "America/New_York",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }); // Format: MM/DD/YYYY
+    
+    console.log('[Analytics] Today EST:', todayEST);
+
+    const pushedToday = await Lead.countDocuments({
+      status: 'PUSHED_TO_CRM',
+      createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+    });
+
+    const analyzedToday = await Lead.countDocuments({
+      status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
+      createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+    });
+
     return NextResponse.json({
       kpis: {
         totalLeads,
         analyzedLeads,
         pushedLeads,
         disqualifiedLeads,
+        pushedToday,
+        analyzedToday,
       },
       agentPerformance,
       verdicts: formattedVerdicts,

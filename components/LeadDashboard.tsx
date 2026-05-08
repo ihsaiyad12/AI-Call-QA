@@ -19,6 +19,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'ANALYZED' | 'PUSHED_TO_CRM'>('ALL');
   const [scoreSort, setScoreSort] = useState<'NONE' | 'ASC' | 'DESC'>('NONE');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [todayStats, setTodayStats] = useState<{ pushed: number, analyzed: number }>({ pushed: 0, analyzed: 0 });
 
   const getLocalDateString = (d: Date) => {
     const year = d.getFullYear();
@@ -143,13 +144,30 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     }
   };
 
+  const fetchTodayStats = async () => {
+    try {
+      const res = await fetch('/api/analytics');
+      if (res.ok) {
+        const data = await res.json();
+        setTodayStats({
+          pushed: data.kpis.pushedToday || 0,
+          analyzed: data.kpis.analyzedToday || 0
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch today stats:', err);
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
+    fetchTodayStats();
   }, [startDate, endDate]);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
       fetchLeads(true); // Silent refresh
+      fetchTodayStats();
     }
   }, [refreshTrigger]);
 
@@ -215,6 +233,29 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
 
   return (
     <div className="fade-in" style={styles.container}>
+      {/* Today's Stats Ribbon */}
+      <div style={styles.statsRibbon}>
+        <div style={styles.statItem}>
+          <div style={{ ...styles.statIcon, backgroundColor: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-primary)' }}>
+            <Database size={16} />
+          </div>
+          <div>
+            <div style={styles.statLabel}>Pushed Today (EST)</div>
+            <div style={styles.statValue}>{todayStats.pushed}</div>
+          </div>
+        </div>
+        <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--color-border)' }} />
+        <div style={styles.statItem}>
+          <div style={{ ...styles.statIcon, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+            <CheckCircle2 size={16} />
+          </div>
+          <div>
+            <div style={styles.statLabel}>Analyzed Today (EST)</div>
+            <div style={styles.statValue}>{todayStats.analyzed}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Header & Search */}
       <div style={styles.header}>
         <div style={styles.searchWrapper}>
@@ -531,4 +572,43 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
   },
   centerContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 20px' },
+  
+  // Stats Ribbon
+  statsRibbon: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '32px',
+    backgroundColor: 'white',
+    padding: '16px 24px',
+    borderRadius: '12px',
+    border: '1px solid var(--color-border)',
+    marginBottom: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  },
+  statItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
+  },
+  statIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  statLabel: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: 'var(--color-text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  statValue: {
+    fontSize: '20px',
+    fontWeight: '800',
+    color: 'var(--color-text-main)',
+    lineHeight: 1.2
+  }
 };
