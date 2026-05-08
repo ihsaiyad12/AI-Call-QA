@@ -58,8 +58,15 @@ export async function PATCH(
 
     const verdict = normalizeVerdict(rawVerdict);
 
+    // Ensure all metrics are numbers for the database and for calculation
+    const nIntent = Number(intent) || 0;
+    const nAuthority = Number(authority) || 0;
+    const nDemo = Number(demo_commitment) || 0;
+    const nTimeline = Number(timeline) || 0;
+    const nIndustry = Number(industry_fit) || 0;
+
     // Ensure score matches sum of sub-metrics
-    const calculatedScore = (Number(intent) || 0) + (Number(authority) || 0) + (Number(demo_commitment) || 0) + (Number(industry_fit) || 0);
+    const calculatedScore = nIntent + nAuthority + nDemo + nTimeline + nIndustry;
     const finalScore = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
 
     // Normalize AI provider
@@ -70,11 +77,11 @@ export async function PATCH(
       verdict,
       score: finalScore,
       reasoning,
-      intent,
-      authority,
-      demo_commitment,
-      timeline,
-      industry_fit,
+      intent: nIntent,
+      authority: nAuthority,
+      demo_commitment: nDemo,
+      timeline: nTimeline,
+      industry_fit: nIndustry,
       risk_level,
       status: status || 'ANALYZED',
       aiProvider: finalAiProvider

@@ -111,8 +111,15 @@ export async function POST(req: Request) {
 
     const verdict = normalizeVerdict(rawVerdict);
 
+    // Ensure all metrics are numbers for the database and for calculation
+    const nIntent = Number(intent) || 0;
+    const nAuthority = Number(authority) || 0;
+    const nDemo = Number(demo_commitment) || 0;
+    const nTimeline = Number(timeline) || 0;
+    const nIndustry = Number(industry_fit) || 0;
+
     // Ensure score matches sum of sub-metrics
-    const calculatedScore = (Number(intent) || 0) + (Number(authority) || 0) + (Number(demo_commitment) || 0) + (Number(industry_fit) || 0);
+    const calculatedScore = nIntent + nAuthority + nDemo + nTimeline + nIndustry;
     const finalScore = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
 
     // Normalize AI provider
@@ -141,7 +148,7 @@ export async function POST(req: Request) {
       const updated = await db.lead.update(existingLead.id, {
         firstName, lastName, phone, category, employeeCount, jobTitle, 
         transcript, verdict, score: finalScore, reasoning, 
-        intent, authority, demo_commitment, timeline, industry_fit, risk_level,
+        intent: nIntent, authority: nAuthority, demo_commitment: nDemo, timeline: nTimeline, industry_fit: nIndustry, risk_level,
         status: status || 'ANALYZED',
         aiProvider: finalAiProvider,
         // addedBy is EXPLICITLY OMITTED here to preserve the original creator
@@ -157,7 +164,7 @@ export async function POST(req: Request) {
     const lead = await db.lead.create({ 
       firstName, lastName, email: normalizedEmail, phone, category, employeeCount, jobTitle, 
       transcript, verdict, score: finalScore, reasoning, 
-      intent, authority, demo_commitment, timeline, industry_fit, risk_level,
+      intent: nIntent, authority: nAuthority, demo_commitment: nDemo, timeline: nTimeline, industry_fit: nIndustry, risk_level,
       status: status || 'ANALYZED',
       aiProvider: finalAiProvider,
       addedBy,

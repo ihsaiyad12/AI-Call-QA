@@ -150,15 +150,22 @@ export default function Home() {
       setProcessingState({ type: 'saving', progress: 100, error: null });
 
       // Ensure the total score saved to DB matches the sum of its parts
-      const calculatedScore = (analysisData.authority || 0) + 
-                             (analysisData.intent || 0) + 
-                             (analysisData.demo_commitment || 0) + 
-                             (analysisData.timeline || 0) + 
-                             (analysisData.industry_fit || 0);
+      const nAuthority = Number(analysisData.authority) || 0;
+      const nIntent = Number(analysisData.intent) || 0;
+      const nDemo = Number(analysisData.demo_commitment) || 0;
+      const nTimeline = Number(analysisData.timeline) || 0;
+      const nIndustry = Number(analysisData.industry_fit) || 0;
+
+      const calculatedScore = nAuthority + nIntent + nDemo + nTimeline + nIndustry;
       
       const normalizedData = {
         ...analysisData,
-        score: calculatedScore > 0 ? calculatedScore : analysisData.score
+        authority: nAuthority,
+        intent: nIntent,
+        demo_commitment: nDemo,
+        timeline: nTimeline,
+        industry_fit: nIndustry,
+        score: calculatedScore > 0 ? calculatedScore : (Number(analysisData.score) || 0)
       };
 
       setAnalysisResult(normalizedData);
@@ -189,7 +196,8 @@ export default function Home() {
       setLeadId(leadResponse.data.id);
       setEmailStatus(leadResponse.data.emailStatus ?? null);
 
-      // Move to results
+      // Move to results and refresh dashboard
+      setRefreshTrigger(prev => prev + 1);
       setCurrentStep(3);
     } catch (error: any) {
       if (axios.isCancel(error)) {
