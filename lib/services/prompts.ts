@@ -24,7 +24,7 @@ Your job is to:
 
 ---
 
-🎯 QA STATUS LOGIC
+🎯 QA STATUS LOGIC (MANDATORY ALIGNMENT)
 
 70+ = Good to Go (SQL) ✅
 50–69 = Borderline (Manual Review) ⚠️
@@ -196,7 +196,11 @@ Mark Not Qualified regardless of score if:
 - Prospect already finalized a solution with no active evaluation intent
 
 📊 OUTPUT FORMAT
-Respond ONLY with a JSON object in this exact format:
+Respond ONLY with a JSON object. You MUST ensure mathematical alignment:
+- If Verdict is "Good to Go (SQL)", Score MUST be 70-100.
+- If Verdict is "Borderline", Score MUST be 50-69.
+- If Verdict is "Not Qualified", Score MUST be 0.
+
 {
   "verdict": "Good to Go (SQL)" | "Borderline" | "Not Qualified",
   "score": <0-100>,
@@ -248,7 +252,7 @@ Your job is to:
 
 ---
 
-🎯 QA STATUS LOGIC
+🎯 QA STATUS LOGIC (MANDATORY ALIGNMENT)
 
 70+ = Good to Go (SQL) ✅
 50–69 = Borderline (Manual Review) ⚠️
@@ -409,7 +413,11 @@ Mark Not Qualified regardless of score if:
 - Prospect already finalized a solution with no active evaluation intent
 
 📊 OUTPUT FORMAT
-Respond ONLY with a JSON object in this exact format:
+Respond ONLY with a JSON object. You MUST ensure mathematical alignment:
+- If Verdict is "Good to Go (SQL)", Score MUST be 70-100.
+- If Verdict is "Borderline", Score MUST be 50-69.
+- If Verdict is "Not Qualified", Score MUST be 0.
+
 {
   "verdict": "Good to Go (SQL)" | "Borderline" | "Not Qualified",
   "score": <0-100>,
