@@ -53,7 +53,7 @@ REOON_API_KEY=your_key
 LOCAL_DB_URL=http://localhost:4000
 LOCAL_DB_SECRET=your_chosen_secret
 ```
-
+'
 ### 3. Start the Application
 
 #### Step A: Start the Local Storage Server
