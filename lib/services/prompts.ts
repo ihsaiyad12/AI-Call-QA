@@ -10,7 +10,7 @@ Mark "Not Qualified" regardless of score if:
 - Explicitly rejects follow-up/consultation or says "do not contact".
 - Recently switched/implemented or locked into a contract.
 - Non-Legal industry OR Company size < 5 employees OR Non-US geography.
-- Timeline > 6 months with no active plans.
+- Timeline is strictly more than 6 months (e.g., 7+ months, next year, or "sometime next year").
 - High friction: Repeatedly tries to end call, avoids questions, or forced agreement.
 
 ---
@@ -34,7 +34,7 @@ Mark "Not Qualified" regardless of score if:
    - 0: Explicitly declines demo/follow-up.
 
 4. TIMELINE (10 pts)
-   - 10: 0–3 Months | 7: 3–6 Months | 5: Exploring/Unclear | 0: >6 Months.
+   - 10: 0–3 Months | 7: 3–6 Months (including exactly 6 months) | 5: Exploring/Unclear | 0: More than 6 months.
 
 5. ICP FIT (10 pts)
    - 10: Tier 1 (Partner, Practice Mgr, Legal Ops).
@@ -43,10 +43,12 @@ Mark "Not Qualified" regardless of score if:
    - 0: Irrelevant role or DQ condition met.
 
 ---
-### ⚖️ VERDICT LOGIC
+### ⚖️ VERDICT LOGIC (Mathematical Consistency is MANDATORY)
 - Good to Go (SQL): 70+ Score AND Influence exists AND no Hard DQ.
 - Borderline: 50–69 Score.
-- Not Qualified: <50 Score OR any Hard DQ triggered.
+- Not Qualified: Score MUST be < 50. (Set to 0 if Hard DQ is triggered).
+
+**CRITICAL**: If any Hard Disqualification rule is triggered, you MUST set the final "score" to 0 in your JSON response, regardless of individual metric math.
 
 ---
 ### 📤 OUTPUT FORMAT
@@ -74,7 +76,7 @@ Mark "Not Qualified" regardless of score if:
 - Explicitly rejects follow-up/consultation or says "do not contact".
 - Recently switched/implemented or locked into a contract.
 - Non-HR/Payroll industry OR Company size < 5 employees OR Non-US geography.
-- Timeline > 6 months with no active plans.
+- Timeline is strictly more than 6 months (e.g., 7+ months, next year, or "sometime next year").
 - High friction: Repeatedly tries to end call, avoids questions, or forced agreement.
 
 ---
@@ -98,7 +100,7 @@ Mark "Not Qualified" regardless of score if:
    - 0: Explicitly declines demo/follow-up.
 
 4. TIMELINE (10 pts)
-   - 10: 0–3 Months | 7: 3–6 Months | 5: Exploring/Unclear | 0: >6 Months.
+   - 10: 0–3 Months | 7: 3–6 Months (including exactly 6 months) | 5: Exploring/Unclear | 0: More than 6 months.
 
 5. ICP FIT (10 pts)
    - 10: Tier 1 (CHRO, HR Director, HR Manager).
@@ -107,10 +109,12 @@ Mark "Not Qualified" regardless of score if:
    - 0: Irrelevant role or DQ condition met.
 
 ---
-### ⚖️ VERDICT LOGIC
+### ⚖️ VERDICT LOGIC (Mathematical Consistency is MANDATORY)
 - Good to Go (SQL): 70+ Score AND Influence exists AND no Hard DQ.
 - Borderline: 50–69 Score.
-- Not Qualified: <50 Score OR any Hard DQ triggered.
+- Not Qualified: Score MUST be < 50. (Set to 0 if Hard DQ is triggered).
+
+**CRITICAL**: If any Hard Disqualification rule is triggered, you MUST set the final "score" to 0 in your JSON response, regardless of individual metric math.
 
 ---
 ### 📤 OUTPUT FORMAT
