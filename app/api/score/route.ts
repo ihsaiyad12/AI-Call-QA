@@ -5,16 +5,16 @@ import db from '@/lib/db';
 import { LeadData } from '@/types';
 
 const scoreSchema = z.object({
-  transcript: z.string().min(1, "Transcript is required"),
+  transcript: z.string().min(10, "Transcript is too short"),
   provider: z.enum(['groq', 'gemini', 'openai', 'claude']),
-  leadId: z.string().nullable().optional(),
-  firstName: z.string().nullable().optional(),
-  lastName: z.string().nullable().optional(),
-  email: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  jobTitle: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-  employeeCount: z.string().nullable().optional(),
+  leadId: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  jobTitle: z.string().optional(),
+  category: z.string().optional(),
+  employeeCount: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
 
     const validation = scoreSchema.safeParse(body);
     if (!validation.success) {
-      console.error('[score] Validation failed:', JSON.stringify(validation.error.format(), null, 2));
       return NextResponse.json({
         error: 'Invalid request data',
         details: validation.error.format()
@@ -44,13 +43,13 @@ export async function POST(req: NextRequest) {
     } = validation.data;
 
     let enrichedLeadData: Partial<LeadData> = {
-      jobTitle: jobTitle || undefined,
-      category: category || undefined,
-      firstName: firstName || undefined,
-      lastName: lastName || undefined,
-      email: email || undefined,
-      phone: phone || undefined,
-      employeeCount: employeeCount || undefined
+      jobTitle,
+      category,
+      firstName,
+      lastName,
+      email,
+      phone,
+      employeeCount
     };
 
     // If leadId is provided, fetch latest data from DB to ensure accuracy
