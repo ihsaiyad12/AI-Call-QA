@@ -62,6 +62,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
       { header: 'QA Analyst Note', key: 'reasoning', width: 40 },
       { header: 'Transcript', key: 'transcript', width: 50 },
       { header: 'QA Status', key: 'verdict', width: 15 },
+      { header: 'Disqualification Comment', key: 'disqualificationComment', width: 30 },
     ];
 
     // Add data
@@ -82,6 +83,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
         reasoning: lead.status === 'PENDING' ? '' : (lead.reasoning || ''),
         transcript: lead.status === 'PENDING' ? '' : (lead.transcript || ''),
         verdict: lead.status === 'PENDING' ? '' : (lead.verdict || ''),
+        disqualificationComment: lead.disqualificationComment || '',
       });
     });
 

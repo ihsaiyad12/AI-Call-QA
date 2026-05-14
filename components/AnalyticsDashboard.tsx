@@ -149,6 +149,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
         { header: 'Score', key: 'score', width: 10 },
         { header: 'AI Provider', key: 'aiProvider', width: 15 },
         { header: 'Verdict', key: 'verdict', width: 20 },
+        { header: 'Disqualification Comment', key: 'disqualificationComment', width: 30 },
       ];
 
       // Add data
@@ -165,6 +166,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
           score: lead.score || 0,
           aiProvider: lead.aiProvider || 'N/A',
           verdict: lead.verdict || 'N/A',
+          disqualificationComment: lead.disqualificationComment || '',
         });
       });
 

@@ -33,6 +33,7 @@ export const db = {
       status?: string;
       addedBy?: string;
       aiProvider?: string;
+      disqualificationComment?: string;
       createdAtEST?: string;
     }) {
       await dbConnect();
@@ -67,6 +68,7 @@ export const db = {
       emailStatusRaw: string;
       aiProvider:     string;
       addedBy:        string;
+      disqualificationComment: string;
     }>) {
       await dbConnect();
       

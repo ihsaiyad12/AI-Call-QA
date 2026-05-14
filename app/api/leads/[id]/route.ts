@@ -43,7 +43,8 @@ export async function PATCH(
 
     const { 
       transcript, verdict: rawVerdict, score, reasoning, status, aiProvider,
-      intent, authority, demo_commitment, timeline, industry_fit, risk_level
+      intent, authority, demo_commitment, timeline, industry_fit, risk_level,
+      disqualificationComment
     } = body;
 
     // Normalize verdict to exact DB enum values
@@ -89,7 +90,8 @@ export async function PATCH(
       industry_fit: nIndustry,
       risk_level,
       status: status || 'ANALYZED',
-      aiProvider: finalAiProvider
+      aiProvider: finalAiProvider,
+      disqualificationComment
     });
 
     if (!updated) {

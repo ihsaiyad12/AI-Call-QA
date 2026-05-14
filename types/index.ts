@@ -41,6 +41,7 @@ export interface LeadRecord extends LeadData {
   industry_fit?: number;
   risk_level?: 'Low' | 'Medium' | 'High';
   status: 'PENDING' | 'ANALYZED' | 'PUSHED_TO_CRM';
+  disqualificationComment?: string;
   emailStatus?: string | null;
   emailStatusRaw?: string | null;
   aiProvider?: string;

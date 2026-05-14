@@ -41,6 +41,8 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
   const [currentScore, setCurrentScore] = useState(analysisResult?.score || 0);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
+  const [showDisqualifyModal, setShowDisqualifyModal] = useState(false);
+  const [disComment, setDisComment] = useState('');
 
   if (!analysisResult) return null;
 
@@ -86,16 +88,21 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
 
   const handleDisqualify = async () => {
     if (!leadId) return;
-    if (!confirm('Are you sure you want to disqualify this lead? This will mark it as Not Qualified in the database.')) return;
+    if (!disComment.trim()) {
+      alert('Please provide a reason for disqualification.');
+      return;
+    }
     
     setIsDisqualifying(true);
     try {
       await axios.patch(`/api/leads/${leadId}`, {
         verdict: 'Not Qualified',
-        score: 0 // Optional: set score to 0 when disqualified manually
+        score: 0,
+        disqualificationComment: disComment
       });
       setCurrentVerdict('Not Qualified');
       setCurrentScore(0);
+      setShowDisqualifyModal(false);
       onRefresh?.();
       alert('Lead has been disqualified.');
     } catch (err) {
@@ -357,7 +364,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
 
                 {currentVerdict !== 'Not Qualified' && (
                   <button
-                    onClick={handleDisqualify}
+                    onClick={() => setShowDisqualifyModal(true)}
                     disabled={isDisqualifying}
                     style={{
                       flex: 1,
@@ -398,6 +405,48 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
         style={{ width: '100%', marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
         <RefreshCw size={15} /> Analyze Another Call
       </button>
+
+      {/* Disqualification Modal */}
+      {showDisqualifyModal && (
+        <div style={styles.modalOverlay}>
+          <div className="card fade-in" style={styles.modalContent}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', color: 'var(--color-red)' }}>
+              <XCircle size={24} />
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Disqualify Lead</h3>
+            </div>
+            
+            <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
+              Please provide a reason why you are disqualifying <strong>{leadData.firstName} {leadData.lastName}</strong>. This will be saved in the database and export.
+            </p>
+            
+            <textarea
+              placeholder="Enter disqualification reason..."
+              value={disComment}
+              onChange={(e) => setDisComment(e.target.value)}
+              style={styles.modalTextarea}
+              autoFocus
+            />
+            
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button 
+                className="secondary-button" 
+                onClick={() => setShowDisqualifyModal(false)}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="primary-button" 
+                onClick={handleDisqualify}
+                disabled={isDisqualifying || !disComment.trim()}
+                style={{ flex: 2, backgroundColor: 'var(--color-red)', borderColor: 'var(--color-red)' }}
+              >
+                {isDisqualifying ? 'Processing...' : 'Confirm Disqualification'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -484,6 +533,23 @@ const styles: Record<string, React.CSSProperties> = {
   // Transcript
   transcriptBox: { marginTop: '4px' },
   transcriptText: { fontSize: '14px', lineHeight: '1.8', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' },
+
+  // Modal Styles
+  modalOverlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000, padding: '20px', backdropFilter: 'blur(4px)'
+  },
+  modalContent: {
+    width: '100%', maxWidth: '450px', padding: '24px', position: 'relative',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+  },
+  modalTextarea: {
+    width: '100%', height: '120px', padding: '12px', borderRadius: '8px',
+    border: '1px solid var(--color-border)', fontSize: '14px', outline: 'none',
+    resize: 'none', fontFamily: 'inherit',
+    transition: 'border-color 0.2s',
+  }
 };
 
 export default Step3_Results;

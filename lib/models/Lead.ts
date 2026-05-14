@@ -19,6 +19,7 @@ export interface ILead extends Document {
   industry_fit?: number;
   risk_level?: 'Low' | 'Medium' | 'High';
   status: 'PENDING' | 'ANALYZED' | 'PUSHED_TO_CRM';
+  disqualificationComment?: string;
   emailStatus?: string;
   emailStatusRaw?: string;
   addedBy?: string;
@@ -51,6 +52,7 @@ const LeadSchema: Schema = new Schema({
     enum: ['PENDING', 'ANALYZED', 'PUSHED_TO_CRM'], 
     default: 'PENDING' 
   },
+  disqualificationComment: { type: String, default: null },
   emailStatus: { type: String, default: null },
   emailStatusRaw: { type: String, default: null },
   addedBy: { type: String, default: null },
