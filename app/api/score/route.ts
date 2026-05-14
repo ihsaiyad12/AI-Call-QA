@@ -5,27 +5,32 @@ import db from '@/lib/db';
 import { LeadData } from '@/types';
 
 const scoreSchema = z.object({
-  transcript: z.string().min(10, "Transcript is too short"),
+  transcript: z.string().min(1, "Transcript cannot be empty"),
   provider: z.enum(['groq', 'gemini', 'openai', 'claude']),
-  leadId: z.string().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  jobTitle: z.string().optional(),
-  category: z.string().optional(),
-  employeeCount: z.string().optional(),
+  leadId: z.string().nullish().transform(v => v ?? undefined),
+  firstName: z.string().nullish().transform(v => v ?? undefined),
+  lastName: z.string().nullish().transform(v => v ?? undefined),
+  email: z.string().nullish().transform(v => v ?? undefined),
+  phone: z.string().nullish().transform(v => v ?? undefined),
+  jobTitle: z.string().nullish().transform(v => v ?? undefined),
+  category: z.string().nullish().transform(v => v ?? undefined),
+  employeeCount: z.string().nullish()
+    .or(z.number().transform(n => String(n)))
+    .transform(v => v ?? undefined),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log('[api/score] Received request body keys:', Object.keys(body));
 
     const validation = scoreSchema.safeParse(body);
     if (!validation.success) {
+      console.error('[api/score] Validation failed:', validation.error.format());
       return NextResponse.json({
         error: 'Invalid request data',
-        details: validation.error.format()
+        details: validation.error.format(),
+        message: validation.error.issues[0]?.message || 'Validation failed'
       }, { status: 400 });
     }
 
