@@ -148,7 +148,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
 
   const fetchTodayStats = async () => {
     try {
-      const res = await fetch('/api/analytics');
+      const res = await fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`);
       if (res.ok) {
         const data = await res.json();
         setTodayStats({
@@ -157,7 +157,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
         });
       }
     } catch (err) {
-      console.error('Failed to fetch today stats:', err);
+      console.error('Failed to fetch stats:', err);
     }
   };
 
@@ -242,7 +242,9 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
             <Database size={16} />
           </div>
           <div>
-            <div style={styles.statLabel}>Pushed Today (EST)</div>
+            <div style={styles.statLabel}>
+              Pushed {startDate === endDate ? `on ${startDate}` : `in Range`}
+            </div>
             <div style={styles.statValue}>{todayStats.pushed}</div>
           </div>
         </div>
@@ -252,7 +254,9 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
             <CheckCircle2 size={16} />
           </div>
           <div>
-            <div style={styles.statLabel}>Analyzed Today (EST)</div>
+            <div style={styles.statLabel}>
+              Analyzed {startDate === endDate ? `on ${startDate}` : `in Range`}
+            </div>
             <div style={styles.statValue}>{todayStats.analyzed}</div>
           </div>
         </div>

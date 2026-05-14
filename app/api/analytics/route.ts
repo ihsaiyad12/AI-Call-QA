@@ -114,25 +114,32 @@ export async function GET(req: Request) {
       notQualified: verdictDistribution.find(v => v.verdict === 'Not Qualified')?.count || 0,
     };
 
-    // 4. Today's Stats (EST)
-    const todayEST = new Date().toLocaleDateString("en-US", {
-      timeZone: "America/New_York",
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }); // Format: MM/DD/YYYY
+    // 4. Period Stats (Dynamic)
+    // If a range is provided, show stats for that period. 
+    // Otherwise, default to Today (EST).
+    let pushedToday, analyzedToday;
     
-    console.log('[Analytics] Today EST:', todayEST);
+    if (start || end) {
+      pushedToday = pushedLeads;
+      analyzedToday = analyzedLeads;
+    } else {
+      const todayEST = new Date().toLocaleDateString("en-US", {
+        timeZone: "America/New_York",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      
+      pushedToday = await Lead.countDocuments({
+        status: 'PUSHED_TO_CRM',
+        createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+      });
 
-    const pushedToday = await Lead.countDocuments({
-      status: 'PUSHED_TO_CRM',
-      createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
-    });
-
-    const analyzedToday = await Lead.countDocuments({
-      status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
-      createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
-    });
+      analyzedToday = await Lead.countDocuments({
+        status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
+        createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+      });
+    }
 
     return NextResponse.json({
       kpis: {

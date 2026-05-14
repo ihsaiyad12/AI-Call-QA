@@ -281,23 +281,27 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
         <div className="saas-card" style={{ ...styles.kpiCard, borderLeft: '4px solid var(--color-purple)' }}>
           <div style={styles.kpiHeader}>
-            <span style={styles.kpiLabel}>Today's Pushed (EST)</span>
+            <span style={styles.kpiLabel}>
+              {startDate === endDate ? `Pushed on ${startDate}` : `Pushed in Period`}
+            </span>
             <Target size={16} color="var(--color-purple)" />
           </div>
           <div style={styles.kpiBody}>
             <h2 style={styles.kpiValue}>{data.kpis.pushedToday}</h2>
-            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>leads synced today</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>leads synced</span>
           </div>
         </div>
 
         <div className="saas-card" style={{ ...styles.kpiCard, borderLeft: '4px solid var(--color-blue)' }}>
           <div style={styles.kpiHeader}>
-            <span style={styles.kpiLabel}>Today's Analyzed (EST)</span>
+            <span style={styles.kpiLabel}>
+              {startDate === endDate ? `Analyzed on ${startDate}` : `Analyzed in Period`}
+            </span>
             <TrendingUp size={16} color="var(--color-blue)" />
           </div>
           <div style={styles.kpiBody}>
             <h2 style={styles.kpiValue}>{data.kpis.analyzedToday}</h2>
-            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>calls reviewed today</span>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>calls reviewed</span>
           </div>
         </div>
 
