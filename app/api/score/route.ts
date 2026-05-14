@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
     } = validation.data;
 
     let enrichedLeadData: Partial<LeadData> = {
-      jobTitle,
-      category,
-      firstName,
-      lastName,
-      email,
-      phone,
-      employeeCount
+      jobTitle: jobTitle || undefined,
+      category: category || undefined,
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+      email: email || undefined,
+      phone: phone || undefined,
+      employeeCount: employeeCount || undefined
     };
 
     // If leadId is provided, fetch latest data from DB to ensure accuracy
