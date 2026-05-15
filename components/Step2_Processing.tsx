@@ -143,11 +143,14 @@ const Step2_Processing: React.FC<Step2ProcessingProps> = ({ processingState, onR
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
-    maxWidth: '450px',
+    maxWidth: '520px',
     margin: '0 auto',
     display: 'flex',
     flexDirection: 'column',
     padding: '40px',
+    borderRadius: '20px',
+    boxShadow: '0 10px 30px var(--color-shadow)',
+    border: '1px solid var(--color-border)',
   },
   progressItem: {
     width: '100%',
@@ -155,26 +158,27 @@ const styles: Record<string, React.CSSProperties> = {
   labelRow: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '8px',
+    marginBottom: '10px',
   },
   progressTrack: {
-    height: '8px',
-    backgroundColor: 'var(--color-primary-light)',
-    borderRadius: '4px',
+    height: '10px',
+    backgroundColor: 'var(--color-bg-app)',
+    borderRadius: '99px',
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: '4px',
+    borderRadius: '99px',
   },
   iconCircle: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
+    width: '56px',
+    height: '56px',
+    borderRadius: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
+    boxShadow: '0 4px 12px var(--color-shadow)',
   }
 };
 

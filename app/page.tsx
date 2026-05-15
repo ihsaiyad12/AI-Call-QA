@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 import StepIndicator from '@/components/StepIndicator';
 import Step1_Upload from '@/components/Step1_Upload';
@@ -12,6 +13,7 @@ import Sidebar from '@/components/Sidebar';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AIProvider, AnalysisResult, ProcessingState } from '@/types';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -265,40 +267,74 @@ export default function Home() {
         setIsCollapsed={setIsSidebarCollapsed}
       />
       
-      <div 
+      <motion.div 
         className="container" 
+        initial={false}
+        animate={{ 
+          marginLeft: isSidebarCollapsed ? 80 : 260,
+          maxWidth: isSidebarCollapsed ? 'calc(100vw - 80px)' : 'calc(100vw - 260px)'
+        }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         style={{ 
-          marginLeft: sidebarWidth, 
           flex: 1, 
-          maxWidth: `calc(100vw - ${sidebarWidth})`,
           overflowX: 'hidden',
-          transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          paddingTop: activeView === 'details' ? '20px' : undefined
         }}
       >
         <header style={{ 
-          textAlign: 'center', 
-          marginBottom: (activeView === 'dashboard' || activeView === 'analytics') ? '0' : '40px',
-          marginTop: (activeView === 'dashboard' || activeView === 'analytics') ? '20px' : '0' 
+          marginBottom: (activeView === 'dashboard' || activeView === 'analytics' || activeView === 'analyzer') ? '0' : '24px',
+          marginTop: 0 
         }}>
-          {(activeView !== 'dashboard' && activeView !== 'analytics') && (
-            <h1 className="outfit-font" style={{ fontSize: '32px', fontWeight: '800', marginBottom: '16px', color: 'var(--color-text-main)' }}>
-              {activeView === 'details' ? 'Lead Analysis Details' : 'Call Quality Analyzer'}
-            </h1>
-          )}
-
-          {(activeView !== 'dashboard' && activeView !== 'analytics') && (
-            <div style={{ marginBottom: '32px' }}>
+          {(activeView !== 'dashboard' && activeView !== 'analytics' && activeView !== 'analyzer') && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              padding: '0 32px', 
+              marginBottom: '32px' 
+            }}>
               <button 
                 onClick={handleBackToDashboard}
                 style={{
-                  background: 'none', border: 'none', color: 'var(--color-purple)', 
-                  fontWeight: '600', fontSize: '14px', cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: '6px'
+                  background: 'var(--color-bg-card)', 
+                  border: '1px solid var(--color-border)', 
+                  borderRadius: '10px', 
+                  color: 'var(--color-text-muted)', 
+                  fontWeight: '600', 
+                  fontSize: '13px', 
+                  cursor: 'pointer', 
+                  padding: '10px 16px',
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px var(--color-shadow)'
+                }}
+                onMouseOver={(e) => { 
+                  e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; 
+                  e.currentTarget.style.color = 'var(--color-primary)'; 
+                  e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+                }}
+                onMouseOut={(e) => { 
+                  e.currentTarget.style.backgroundColor = 'var(--color-bg-card)'; 
+                  e.currentTarget.style.color = 'var(--color-text-muted)'; 
+                  e.currentTarget.style.borderColor = 'var(--color-border)';
                 }}
               >
-                ← Back to Dashboard
+                <ArrowLeft size={16} /> 
+                <span>Back</span>
               </button>
-              {activeView === 'analyzer' && (
+
+              <h1 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+                {activeView === 'details' ? '' : 'Call Quality Analyzer'}
+              </h1>
+
+              <div style={{ width: '160px' }}></div> {/* Spacer for centering */}
+            </div>
+          )}
+
+          {activeView === 'analyzer' && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <StepIndicator 
                   currentStep={currentStep} 
                   onStepClick={(step) => {
@@ -307,7 +343,6 @@ export default function Home() {
                     }
                   }}
                 />
-              )}
             </div>
           )}
         </header>
@@ -315,7 +350,7 @@ export default function Home() {
         <main>
           {/* Analytics & Leads are always mounted but hidden via CSS — prevents re-fetching */}
           <div style={{ display: activeView === 'analytics' ? 'block' : 'none' }}>
-            <AnalyticsDashboard isVisible={activeView === 'analytics'} refreshTrigger={refreshTrigger} />
+            <AnalyticsDashboard isVisible={activeView === 'analytics'} refreshTrigger={refreshTrigger} isCollapsed={isSidebarCollapsed} />
           </div>
           <div style={{ display: activeView === 'dashboard' ? 'block' : 'none' }}>
             <LeadDashboard 
@@ -383,10 +418,9 @@ export default function Home() {
           )}
         </main>
 
-        <footer style={{ marginTop: '80px', textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-          <p>A product by x-engage</p>
-        </footer>
-      </div>
+
+      </motion.div>
     </div>
   );
 }
+

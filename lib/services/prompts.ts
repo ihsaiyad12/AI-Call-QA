@@ -90,7 +90,7 @@ SCORING RUBRIC (RAW COMPONENTS)
 AUTO-DISQUALIFICATION RULES
 
 Mark verdict "Not Qualified" and score 0 ONLY if:
-- Total raw score is below 40.
+- Prospect explicitly says NO to a demo/consultation/follow-up (automatic disqualification; score MUST be less than 50).
 - Prospect is hostile or explicitly asks to be removed.
 - Industry is completely irrelevant.
 - Prospect refuses any form of communication or follow-up entirely.
@@ -229,7 +229,7 @@ SCORING RUBRIC (RAW COMPONENTS)
 AUTO-DISQUALIFICATION RULES
 
 Mark verdict "Not Qualified" and score 0 ONLY if:
-- Total raw score is below 40.
+- Prospect explicitly says NO to a demo/consultation/follow-up (automatic disqualification; score MUST be less than 50).
 - Prospect is hostile or refuses all communication.
 - Industry is completely irrelevant.
 - Conversation is a wrong number or end of conversation.

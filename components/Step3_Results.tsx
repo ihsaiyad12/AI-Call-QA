@@ -6,6 +6,7 @@ import {
   MessageSquare, BarChart3, Database, User, Mail,
   Phone, Tag, Users, Send, ChevronRight
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 import { AnalysisResult } from '@/types';
 
@@ -37,8 +38,12 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
   const [activeTab, setActiveTab] = useState<'score' | 'transcript'>('score');
   const [pushStatus, setPushStatus] = useState<'idle' | 'pushing' | 'success' | 'error'>('idle');
   const [pushError, setPushError] = useState('');
-  const [currentVerdict, setCurrentVerdict] = useState(analysisResult?.verdict);
-  const [currentScore, setCurrentScore] = useState(analysisResult?.score || 0);
+  const initialScore = analysisResult?.score || 0;
+  // Enforce mathematical rules to override AI hallucinations
+  const initialVerdict = initialScore >= 70 ? 'Good to Go (SQL)' : (initialScore >= 50 ? 'Borderline' : 'Not Qualified');
+  
+  const [currentVerdict, setCurrentVerdict] = useState(initialVerdict);
+  const [currentScore, setCurrentScore] = useState(initialScore);
   const [isDisqualifying, setIsDisqualifying] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
   const [showDisqualifyModal, setShowDisqualifyModal] = useState(false);
@@ -53,27 +58,23 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
       bg: 'var(--color-green-bg)', border: 'var(--color-green)', color: 'var(--color-green)',
       icon: <CheckCircle2 size={20} />, label: 'Good to Go (SQL)',
       guidance: 'Score 70+. Strong potential — proceed with sales follow-up.',
-      tagBg: '#d4edda', tagColor: '#155724'
+      tagBg: 'rgba(34, 197, 94, 0.15)', tagColor: '#4ade80'
     };
     if (currentVerdict === 'Borderline') return {
       bg: 'var(--color-amber-bg)', border: 'var(--color-amber)', color: 'var(--color-amber)',
       icon: <AlertCircle size={20} />, label: 'Borderline',
       guidance: 'Score 50–69. Review manually — accept if authority is strong.',
-      tagBg: '#fff3cd', tagColor: '#856404'
+      tagBg: 'rgba(245, 158, 11, 0.15)', tagColor: '#fbbf24'
     };
     return {
       bg: 'var(--color-red-bg)', border: 'var(--color-red)', color: 'var(--color-red)',
       icon: <XCircle size={20} />, label: 'Not Qualified',
       guidance: 'Lead has been disqualified manually or by score.',
-      tagBg: '#f8d7da', tagColor: '#721c24'
+      tagBg: 'rgba(239, 68, 68, 0.15)', tagColor: '#f87171'
     };
   };
 
   const verdictConfig = getVerdictConfig();
-
-  const riskColors: Record<string, string> = {
-    Low: 'var(--color-green)', Medium: 'var(--color-amber)', High: 'var(--color-red)'
-  };
 
   const metrics = [
     { name: 'Authority',       score: authority || 0,       max: 40, color: 'var(--color-primary)' },
@@ -82,9 +83,6 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
     { name: 'Timeline',        score: timeline || 0,        max: 10, color: '#ec4899' },
     { name: 'Industry Fit',    score: industry_fit || 0,    max: 10, color: '#6366f1' },
   ];
-
-  // Calculate the total score from the breakdown to ensure consistency in the UI
-  const calculatedScore = metrics.reduce((acc, m) => acc + m.score, 0);
 
   const handleDisqualify = async () => {
     if (!leadId) return;
@@ -141,90 +139,130 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
 
       {/* ── Lead Profile Card ────────────────────────── */}
       <div className="card fade-in" style={styles.profileCard}>
-        {/* Header row */}
-        <div style={styles.profileHeader}>
-          <div style={styles.avatarCircle}>
-            <span style={styles.avatarInitials}>
-              {leadData.firstName[0]}{leadData.lastName[0]}
-            </span>
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={styles.leadName}>{leadData.firstName} {leadData.lastName}</h2>
-            <div style={styles.leadMeta}>
-              {leadData.jobTitle && (
+        <div style={{ 
+          padding: '32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '32px',
+          position: 'relative',
+        }}>
+          {/* Left Side: Profile & Details */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', flex: '1 1 500px' }}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              style={{ ...styles.avatarCircle, width: '64px', height: '64px', flexShrink: 0 }}
+            >
+              <span style={{ ...styles.avatarInitials, fontSize: '22px' }}>
+                {leadData.firstName.charAt(0)}{leadData.lastName.charAt(0)}
+              </span>
+            </motion.div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <motion.h2 
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  style={{ ...styles.leadName, fontSize: '24px', margin: 0, fontWeight: '700' }}
+                >
+                  {leadData.firstName} {leadData.lastName}
+                </motion.h2>
+                <div style={{ 
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  backgroundColor: verdictConfig.tagBg, color: verdictConfig.tagColor,
+                  border: `1px solid ${verdictConfig.tagColor}30`,
+                  padding: '4px 12px', borderRadius: '99px',
+                  fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px'
+                }}>
+                  {verdictConfig.icon}
+                  <span>{verdictConfig.label}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', color: 'var(--color-text-muted)', fontSize: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Mail size={14} />
+                  <span style={{ color: 'var(--color-text-main)' }}>{leadData.email}</span>
+                  {emailStatus && (() => {
+                    const GREEN = ['Valid', 'Safe to Send'];
+                    const YELLOW = ['Unknown', 'Catch-All'];
+                    const isGreen  = GREEN.includes(emailStatus);
+                    const isYellow = YELLOW.includes(emailStatus);
+                    const color  = isGreen ? '#4ade80' : isYellow ? '#fbbf24' : '#f87171';
+                    return (
+                      <span style={{ 
+                        fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px',
+                        backgroundColor: `${color}15`, color: color, border: `1px solid ${color}30`,
+                        textTransform: 'uppercase'
+                      }}>
+                        {emailStatus}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--color-border)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Phone size={14} />
+                  <span style={{ color: 'var(--color-text-main)' }}>{leadData.phone}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {leadData.jobTitle && (
+                  <span style={styles.metaChip}>
+                    <User size={12} color="var(--color-primary)" /> {leadData.jobTitle}
+                  </span>
+                )}
                 <span style={styles.metaChip}>
-                  <User size={12} /> {leadData.jobTitle}
+                  <Tag size={12} color="var(--color-primary)" /> {leadData.category}
                 </span>
-              )}
-              <span style={styles.metaChip}>
-                <Tag size={12} /> {leadData.category}
-              </span>
-              <span style={styles.metaChip}>
-                <Users size={12} /> {leadData.employeeCount} employees
-              </span>
-              {leadData.aiProvider && (
-                <span style={{ ...styles.metaChip, backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#475569', textTransform: 'capitalize' }}>
-                  🤖 {leadData.aiProvider}
+                <span style={styles.metaChip}>
+                  <Users size={12} color="var(--color-primary)" /> {leadData.employeeCount} employees
                 </span>
-              )}
+                {leadData.aiProvider && (
+                  <span style={{ ...styles.metaChip, background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-primary)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                    🤖 {leadData.aiProvider}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-          <div style={styles.badgeContainer}>
-             <div style={{ 
-               ...styles.verdictBadge, 
-               backgroundColor: verdictConfig.tagBg, 
-               color: verdictConfig.tagColor 
-             }}>
-               {verdictConfig.icon}
-               <span style={{ fontWeight: '700' }}>{verdictConfig.label}</span>
-             </div>
-          </div>
-        </div>
 
-        {/* Contact info strip */}
-        <div style={styles.contactStrip}>
-          <div style={styles.contactItem}>
-            <Mail size={14} color="var(--color-text-muted)" />
-            <span>{leadData.email}</span>
-            {emailStatus && (() => {
-              const GREEN = ['Valid', 'Safe to Send'];
-              const YELLOW = ['Unknown', 'Catch-All'];
-              // Everything else (Invalid, Disposable, Spam Trap, Do Not Mail, Role Account, etc.) → red
-              const isGreen  = GREEN.includes(emailStatus);
-              const isYellow = YELLOW.includes(emailStatus);
-              const bg     = isGreen ? '#d4edda' : isYellow ? '#fff3cd' : '#f8d7da';
-              const color  = isGreen ? '#155724' : isYellow ? '#856404' : '#721c24';
-              const border = isGreen ? '#3B6D11' : isYellow ? '#D97706' : '#A32D2D';
-              return (
-                <span style={{ ...styles.emailBadge, backgroundColor: bg, color, border: `1px solid ${border}` }}>
-                  ✉ {emailStatus}
+          {/* Right Side: Aligned Score */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            flex: '0 0 280px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                QA Score
+              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                <span style={{ fontSize: '32px', fontWeight: '700', color: 'var(--color-text-main)', lineHeight: 1 }}>
+                  {currentScore}
                 </span>
-              );
-            })()}
-          </div>
-          <div style={styles.contactItem}>
-            <Phone size={14} color="var(--color-text-muted)" />
-            <span>{leadData.phone}</span>
-          </div>
-        </div>
-
-        {/* Score + Risk strip */}
-        <div style={styles.scoreStrip}>
-          <div style={styles.scoreBlock}>
-            <span style={styles.scoreNumber}>{currentScore}<span style={{ fontSize: '16px', fontWeight: 400 }}>/100</span></span>
-            <span style={styles.scoreLabel}>QA Score</span>
-          </div>
-          <div style={styles.scoreDivider} />
-          {/* Score bar only */}
-          <div style={{ flex: 1 }}>
-            <div style={styles.barTrack}>
-              <div style={{
-                ...styles.barFill,
-                width: `${currentScore}%`,
-                backgroundColor: currentScore >= 70 ? 'var(--color-green)' : currentScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)',
-              }} />
+                <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--color-text-muted)', opacity: 0.6 }}>/100</span>
+              </div>
             </div>
-            <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block' }}>
+
+            <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-bg-hover)', borderRadius: '99px', overflow: 'hidden', marginBottom: '8px' }}>
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${currentScore}%` }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                style={{
+                  height: '100%',
+                  backgroundColor: currentScore >= 70 ? 'var(--color-green)' : currentScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)',
+                  borderRadius: '99px'
+                }} 
+              />
+            </div>
+            
+            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', textAlign: 'right', opacity: 0.8 }}>
               {verdictConfig.guidance}
             </span>
           </div>
@@ -233,53 +271,52 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
 
       {/* ── Tab Bar ─────────────────────────────────── */}
       <div style={styles.tabBar}>
-        {(['score', 'transcript'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{
-            ...styles.tabBtn,
-            borderBottom: activeTab === tab ? '2px solid var(--color-primary)' : '2px solid transparent',
-            color: activeTab === tab ? 'var(--color-primary)' : 'var(--color-text-muted)',
-            fontWeight: activeTab === tab ? '700' : '500',
-          }}>
-            {tab === 'score' ? <><BarChart3 size={15} /> Score Breakdown</> : <><MessageSquare size={15} /> Transcript</>}
-          </button>
-        ))}
+        {(['score', 'transcript'] as const).map(tab => {
+          const isActive = activeTab === tab;
+          return (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              ...styles.tabBtn,
+              backgroundColor: isActive ? 'var(--color-primary)' : 'var(--color-bg-card)',
+              color: isActive ? 'white' : 'var(--color-text-muted)',
+              borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
+              boxShadow: isActive ? '0 4px 12px rgba(139, 92, 246, 0.2)' : '0 2px 8px var(--color-shadow)',
+            }}>
+              {tab === 'score' ? <><BarChart3 size={16} /> Score Breakdown</> : <><MessageSquare size={16} /> Transcript</>}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === 'score' ? (
-        <div style={styles.tabContent}>
-          {/* Metric bars */}
-          <div className="card" style={styles.section}>
-            <h3 style={styles.sectionTitle}>Score Breakdown</h3>
-            <div style={styles.metricsGrid}>
-              {metrics.map(m => (
-                <div key={m.name} style={styles.metricRow}>
-                  <div style={styles.metricLabelRow}>
-                    <span style={styles.metricLabel}>{m.name}</span>
-                    <span style={styles.metricValue}>{m.score}<span style={{ fontWeight: 400, color: 'var(--color-text-muted)' }}>/{m.max}</span></span>
+        <div style={{ ...styles.tabContentGrid, alignItems: 'flex-start' }}>
+          {/* ── LEFT COLUMN ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Metric bars */}
+            <div className="card" style={{ ...styles.section }}>
+              <h3 style={styles.sectionTitle}>Score Breakdown</h3>
+              <div style={styles.metricsGrid}>
+                {metrics.map(m => (
+                  <div key={m.name} style={styles.metricRow}>
+                    <div style={styles.metricLabelRow}>
+                      <span style={styles.metricLabel}>{m.name}</span>
+                      <span style={styles.metricValue}>{m.score}<span style={{ fontWeight: 400, color: 'var(--color-text-muted)' }}>/{m.max}</span></span>
+                    </div>
+                    <div style={styles.barTrack}>
+                      <div style={{
+                        ...styles.barFill,
+                        width: `${(m.score / m.max) * 100}%`,
+                        backgroundColor: m.color,
+                        transition: 'width 0.8s ease',
+                      }} />
+                    </div>
                   </div>
-                  <div style={styles.barTrack}>
-                    <div style={{
-                      ...styles.barFill,
-                      width: `${(m.score / m.max) * 100}%`,
-                      backgroundColor: m.color,
-                      transition: 'width 0.8s ease',
-                    }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Analyst Notes */}
-          <div className="card" style={styles.section}>
-            <h3 style={styles.sectionTitle}>Analyst Notes</h3>
-            <p style={styles.reasoning}>{reasoning}</p>
-          </div>
-
-          {/* CRM Push & Disqualify */}
-          {leadId && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="card" style={{ ...styles.section, border: '1px solid var(--color-primary)', background: 'rgba(79, 70, 229, 0.03)' }}>
+            {/* CRM Push */}
+            {leadId && (
+              <div className="card" style={{ ...styles.section, border: '1px solid rgba(139, 92, 246, 0.2)', background: 'linear-gradient(to bottom right, var(--color-bg-card), rgba(139, 92, 246, 0.05))' }}>
                 <div style={styles.crmHeader}>
                   <Database size={18} color="var(--color-primary)" />
                   <h3 style={styles.sectionTitle}>Push to HubSpot CRM</h3>
@@ -295,7 +332,6 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                 ) : (
                   <>
                     <button
-                      className="primary-button"
                       disabled={pushStatus === 'pushing' || currentVerdict === 'Not Qualified'}
                       onClick={async () => {
                         setPushStatus('pushing');
@@ -309,8 +345,12 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                       }}
                       style={{ 
                         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px',
-                        opacity: currentVerdict === 'Not Qualified' ? 0.6 : 1
+                        opacity: currentVerdict === 'Not Qualified' ? 0.6 : 1,
+                        padding: '12px', borderRadius: '10px', fontWeight: '600',
+                        backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', cursor: currentVerdict === 'Not Qualified' ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s', boxShadow: currentVerdict === 'Not Qualified' ? 'none' : '0 4px 12px rgba(139, 92, 246, 0.25)'
                       }}
+                      onMouseOver={(e) => { if (currentVerdict !== 'Not Qualified') e.currentTarget.style.backgroundColor = 'var(--color-primary)'; }}
                     >
                       <Send size={15} />
                       {pushStatus === 'pushing' ? 'Pushing...' : 'Push to HubSpot CRM'}
@@ -331,67 +371,64 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                   </>
                 )}
               </div>
+            )}
+          </div>
 
-              {/* Manual Qualification & Disqualification Buttons */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {currentVerdict !== 'Good to Go (SQL)' && (
-                  <button
-                    onClick={handleQualify}
-                    disabled={isQualifying}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--color-green)',
-                      backgroundColor: 'white',
-                      color: 'var(--color-green)',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-green-bg)'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                  >
-                    <CheckCircle2 size={16} />
-                    {isQualifying ? 'Qualifying...' : 'Qualify Lead'}
-                  </button>
-                )}
-
-                {currentVerdict !== 'Not Qualified' && (
-                  <button
-                    onClick={() => setShowDisqualifyModal(true)}
-                    disabled={isDisqualifying}
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--color-red)',
-                      backgroundColor: 'white',
-                      color: 'var(--color-red)',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-red-bg)'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                  >
-                    <XCircle size={16} />
-                    {isDisqualifying ? 'Disqualifying...' : 'Disqualify Lead'}
-                  </button>
-                )}
-              </div>
+          {/* ── RIGHT COLUMN ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Analyst Notes */}
+            <div className="card" style={{ ...styles.section }}>
+              <h3 style={styles.sectionTitle}>Analyst Notes</h3>
+              <p style={styles.reasoning}>{reasoning}</p>
             </div>
-          )}
+
+            {/* Manual Decision Override */}
+            {leadId && (
+              <div className="card" style={{ ...styles.section }}>
+                <h3 style={styles.sectionTitle}>Manual Decision Override</h3>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
+                  Override AI verdict to force qualification or manually disqualify this lead.
+                </p>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  {currentVerdict !== 'Good to Go (SQL)' && (
+                    <button 
+                      onClick={handleQualify}
+                      disabled={isQualifying}
+                      style={{ 
+                        flex: 1, padding: '12px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s',
+                        backgroundColor: 'transparent', color: 'var(--color-green)', border: '1px solid var(--color-green)',
+                        boxShadow: '0 2px 8px var(--color-shadow)'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <CheckCircle2 size={16} />
+                      {isQualifying ? 'Qualifying...' : 'Force Qualify'}
+                    </button>
+                  )}
+
+                  {currentVerdict !== 'Not Qualified' && (
+                    <button 
+                      onClick={() => setShowDisqualifyModal(true)}
+                      disabled={isDisqualifying}
+                      style={{ 
+                        flex: 1, padding: '12px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.2s',
+                        backgroundColor: 'transparent', color: 'var(--color-red)', border: '1px solid var(--color-red)',
+                        boxShadow: '0 2px 8px var(--color-shadow)'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <XCircle size={16} />
+                      {isDisqualifying ? 'Disqualifying...' : 'Disqualify Lead'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="card fade-in" style={styles.transcriptBox}>
@@ -401,9 +438,16 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
       )}
 
       {/* Reset */}
-      <button className="primary-button" onClick={onReset}
-        style={{ width: '100%', marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-        <RefreshCw size={15} /> Analyze Another Call
+      <button onClick={onReset}
+        style={{ 
+           width: '100%', marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+           padding: '16px', borderRadius: '12px', border: '1px dashed var(--color-border)', backgroundColor: 'transparent',
+           color: 'var(--color-text-muted)', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
+        }}
+        onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
+        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+      >
+        <RefreshCw size={16} /> Analyze Another Call
       </button>
 
       {/* Disqualification Modal */}
@@ -431,7 +475,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
               <button 
                 className="secondary-button" 
                 onClick={() => setShowDisqualifyModal(false)}
-                style={{ flex: 1 }}
+                style={{ flex: 1, backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-text-main)', border: '1px solid var(--color-border)' }}
               >
                 Cancel
               </button>
@@ -439,7 +483,7 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                 className="primary-button" 
                 onClick={handleDisqualify}
                 disabled={isDisqualifying || !disComment.trim()}
-                style={{ flex: 2, backgroundColor: 'var(--color-red)', borderColor: 'var(--color-red)' }}
+                style={{ flex: 2, backgroundColor: 'var(--color-red)', borderColor: 'var(--color-red)', color: 'white' }}
               >
                 {isDisqualifying ? 'Processing...' : 'Confirm Disqualification'}
               </button>
@@ -452,63 +496,82 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  wrapper: { maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0' },
+  wrapper: { maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0' },
 
   // Profile card
-  profileCard: { marginBottom: '0', borderRadius: '12px 12px 0 0', borderBottom: 'none' },
-  profileHeader: { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' },
+  profileCard: { 
+    marginBottom: '24px', 
+    borderRadius: '24px', 
+    backgroundColor: 'var(--color-bg-card)', 
+    border: '1px solid var(--color-border)',
+    boxShadow: '0 20px 50px var(--color-shadow)',
+    overflow: 'hidden'
+  },
   avatarCircle: {
-    width: '52px', height: '52px', borderRadius: '50%',
+    width: '64px', height: '64px', borderRadius: '50%',
     background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
   },
-  avatarInitials: { color: 'white', fontWeight: '700', fontSize: '18px', fontFamily: "'Outfit', sans-serif" },
-  leadName: { fontSize: '20px', fontWeight: '700', marginBottom: '6px', color: 'var(--color-text-main)' },
+  avatarInitials: { color: 'white', fontWeight: '700', fontSize: '22px', fontFamily: "'Outfit', sans-serif" },
+  leadName: { fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: 'var(--color-text-main)', letterSpacing: '-0.5px' },
   leadMeta: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   metaChip: {
-    display: 'inline-flex', alignItems: 'center', gap: '4px',
-    fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)',
-    backgroundColor: 'var(--color-bg-app)', borderRadius: '99px',
-    padding: '3px 10px', border: '1px solid var(--color-border)',
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    fontSize: '12px', fontWeight: '600', color: 'var(--color-text-muted)',
+    backgroundColor: 'var(--color-bg-hover)', borderRadius: '8px',
+    padding: '5px 10px', border: '1px solid var(--color-border)',
   },
   verdictBadge: {
-    display: 'flex', alignItems: 'center', gap: '6px',
-    padding: '6px 14px', borderRadius: '99px', fontWeight: '700', fontSize: '13px',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '8px 20px', borderRadius: '99px', fontWeight: '800', fontSize: '14px',
     flexShrink: 0,
   },
-  contactRow: { display: 'flex', gap: '24px', marginBottom: '20px', flexWrap: 'wrap' },
-  contactItem: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--color-text-muted)' },
+  contactRow: { display: 'flex', gap: '24px', flexWrap: 'wrap', marginTop: '4px' },
+  contactItem: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--color-text-muted)' },
   emailBadge: {
-    fontSize: '11px', fontWeight: '700', padding: '2px 8px',
-    borderRadius: '99px', letterSpacing: '0.3px',
+    fontSize: '12px', fontWeight: '700', padding: '4px 10px',
+    borderRadius: '6px', letterSpacing: '0.3px', marginLeft: '8px'
   },
   scoreStrip: {
     display: 'flex', alignItems: 'center', gap: '20px',
-    padding: '16px', backgroundColor: 'var(--color-bg-app)',
-    borderRadius: '8px', border: '1px solid var(--color-border)',
+    padding: '16px 20px', backgroundColor: 'var(--color-bg-hover)',
+    borderRadius: '16px', border: '1px solid var(--color-border)',
+    width: '100%',
+    backdropFilter: 'blur(10px)'
   },
-  scoreBlock: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: '70px' },
-  scoreNumber: { fontSize: '28px', fontWeight: '800', fontFamily: "'Outfit', sans-serif", color: 'var(--color-text-main)' },
-  scoreLabel: { fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--color-text-muted)' },
-  scoreDivider: { width: '1px', height: '40px', backgroundColor: 'var(--color-border)' },
+  scoreBlock: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: '85px', borderRight: '1px solid var(--color-border)', paddingRight: '20px' },
+  scoreNumber: { fontSize: '36px', fontWeight: '800', fontFamily: "'Outfit', sans-serif", color: 'var(--color-text-main)', lineHeight: 1, letterSpacing: '-1px' },
+  scoreLabel: { fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-muted)', marginTop: '4px' },
 
   // Tab
   tabBar: {
-    display: 'flex', gap: '0',
-    backgroundColor: 'white', borderLeft: '0.5px solid var(--color-border)',
-    borderRight: '0.5px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border)',
-    marginBottom: '20px',
+    display: 'flex', gap: '16px',
+    marginBottom: '24px',
   },
   tabBtn: {
-    display: 'flex', alignItems: 'center', gap: '6px',
-    padding: '12px 20px', background: 'none', border: 'none',
-    fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s',
+    display: 'flex', alignItems: 'center', gap: '8px',
+    padding: '12px 24px', border: '1px solid var(--color-border)',
+    borderRadius: '10px',
+    fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s',
   },
-  tabContent: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  tabContentGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+    gap: '20px',
+    alignItems: 'stretch'
+  },
+  actionContainer: {
+    gridColumn: '1 / -1',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+    gap: '20px',
+    alignItems: 'stretch'
+  },
 
   // Sections
-  section: { marginBottom: '0' },
-  sectionTitle: { fontSize: '14px', fontWeight: '700', marginBottom: '14px', color: 'var(--color-text-main)' },
+  section: { marginBottom: '0', padding: '24px', borderRadius: '16px', backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)', boxShadow: '0 8px 30px var(--color-shadow)' },
+  sectionTitle: { fontSize: '16px', fontWeight: '800', marginBottom: '16px', color: 'var(--color-text-main)', letterSpacing: '-0.3px' },
 
   // Metrics
   metricsGrid: { display: 'flex', flexDirection: 'column', gap: '14px' },
@@ -516,7 +579,7 @@ const styles: Record<string, React.CSSProperties> = {
   metricLabelRow: { display: 'flex', justifyContent: 'space-between' },
   metricLabel: { fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: '500' },
   metricValue: { fontSize: '13px', fontWeight: '700', color: 'var(--color-text-main)' },
-  barTrack: { height: '7px', backgroundColor: 'var(--color-primary-light)', borderRadius: '99px', overflow: 'hidden' },
+  barTrack: { height: '7px', backgroundColor: 'var(--color-bg-hover)', borderRadius: '99px', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: '99px' },
 
   // Analyst Notes
@@ -527,26 +590,29 @@ const styles: Record<string, React.CSSProperties> = {
   successBanner: {
     display: 'flex', alignItems: 'center', gap: '8px',
     color: 'var(--color-green)', fontWeight: '600', fontSize: '14px',
-    padding: '10px 14px', backgroundColor: 'var(--color-green-bg)', borderRadius: '8px',
+    padding: '10px 14px', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px',
+    border: '1px solid rgba(34, 197, 94, 0.2)'
   },
 
   // Transcript
-  transcriptBox: { marginTop: '4px' },
+  transcriptBox: { marginTop: '4px', backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)', padding: '24px', borderRadius: '16px' },
   transcriptText: { fontSize: '14px', lineHeight: '1.8', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' },
 
   // Modal Styles
   modalOverlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 1000, padding: '20px', backdropFilter: 'blur(4px)'
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 1000, padding: '20px', backdropFilter: 'blur(8px)'
   },
   modalContent: {
     width: '100%', maxWidth: '450px', padding: '24px', position: 'relative',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+    backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
+    borderRadius: '20px', boxShadow: '0 25px 50px -12px var(--color-shadow)'
   },
   modalTextarea: {
     width: '100%', height: '120px', padding: '12px', borderRadius: '8px',
     border: '1px solid var(--color-border)', fontSize: '14px', outline: 'none',
+    backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-text-main)',
     resize: 'none', fontFamily: 'inherit',
     transition: 'border-color 0.2s',
   }

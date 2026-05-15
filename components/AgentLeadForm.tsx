@@ -153,7 +153,7 @@ export default function AgentLeadForm() {
       'PUSHED_TO_CRM': 'var(--color-purple)',
     };
     const bgMap: Record<string, string> = {
-      'PENDING': '#F3F4F6',
+      'PENDING': 'var(--color-bg-hover)',
       'ANALYZED': 'var(--color-green-bg)',
       'PUSHED_TO_CRM': 'var(--color-purple-bg)',
     };
@@ -394,9 +394,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     gap: '8px',
     marginBottom: '24px',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'var(--color-bg-hover)',
     padding: '6px',
     borderRadius: '12px',
+    border: '1px solid var(--color-border)',
     width: 'fit-content',
     margin: '0 auto 32px'
   },
@@ -415,9 +416,9 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s ease',
   },
   activeTab: {
-    backgroundColor: 'white',
-    color: 'var(--color-primary)',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    backgroundColor: 'var(--color-primary)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
   },
   card: { maxWidth: '620px', margin: '0 auto', overflow: 'hidden', padding: '32px' },
   section: {
@@ -431,11 +432,12 @@ const styles: Record<string, React.CSSProperties> = {
   label: { fontSize: '13px', fontWeight: '600', color: 'var(--color-text-main)' },
   input: {
     width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)',
-    fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+    fontSize: '14px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'var(--color-bg-app)',
+    color: 'var(--color-text-main)',
   },
   select: {
     width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)',
-    backgroundColor: 'white', fontSize: '14px', color: 'var(--color-text-main)', outline: 'none', boxSizing: 'border-box',
+    backgroundColor: 'var(--color-bg-app)', fontSize: '14px', color: 'var(--color-text-main)', outline: 'none', boxSizing: 'border-box',
   },
   phoneInputGroup: {
     display: 'flex', alignItems: 'center', border: '1px solid var(--color-border)',
@@ -447,7 +449,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   phoneInput: {
     flex: 1, padding: '10px 12px', border: 'none', outline: 'none', fontSize: '14px',
-    width: '100%', boxSizing: 'border-box' as const, backgroundColor: 'white',
+    width: '100%', boxSizing: 'border-box' as const, backgroundColor: 'var(--color-bg-app)',
+    color: 'var(--color-text-main)',
   },
   iconCircle: {
     width: '56px', height: '56px', borderRadius: '50%', display: 'flex',

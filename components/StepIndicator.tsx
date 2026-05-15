@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, Upload, MessageSquare, Target, Trophy } from 'lucide-react';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -7,118 +10,203 @@ interface StepIndicatorProps {
 }
 
 const steps = [
-  { id: 1, name: 'Upload' },
-  { id: 2, name: 'Transcribe' },
-  { id: 3, name: 'Score' },
-  { id: 4, name: 'Results' },
+  { id: 1, name: 'Setup', icon: Upload },
+  { id: 2, name: 'Processing', icon: MessageSquare },
+  { id: 3, name: 'Analysis', icon: Target },
+  { id: 4, name: 'Results', icon: Trophy },
 ];
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, onStepClick }) => {
-  // Normalize currentStep for the 4 logic steps vs 3 UI screens
-  // 1: Upload, 2: Transcribing/Scoring, 3: Results
   const activeStep = currentStep === 3 ? 4 : currentStep;
 
   return (
     <div style={styles.container}>
-      {steps.map((step, index) => {
-        const isCompleted = activeStep > step.id;
-        const isActive = activeStep === step.id;
-        const isClickable = step.id === 1 && currentStep > 1 && onStepClick;
-        
-        return (
-          <React.Fragment key={step.id}>
-            <div 
-              style={{
-                ...styles.stepWrapper,
-                cursor: isClickable ? 'pointer' : 'default',
-                opacity: isClickable ? 0.8 : 1,
-              }}
-              onClick={() => {
-                if (isClickable && onStepClick) {
-                  onStepClick(step.id);
-                }
-              }}
-            >
+      <div style={styles.stepsWrapper}>
+        {steps.map((step, index) => {
+          const isCompleted = activeStep > step.id;
+          const isActive = activeStep === step.id;
+          const Icon = step.icon;
+          const isClickable = step.id === 1 && currentStep > 1;
+          
+          return (
+            <React.Fragment key={step.id}>
               <div 
                 style={{
-                  ...styles.circle,
-                  backgroundColor: isCompleted ? '#3B6D11' : (isActive ? '#7F77DD' : 'white'),
-                  borderColor: isCompleted ? '#3B6D11' : (isActive ? '#7F77DD' : 'var(--color-border)'),
-                  color: isCompleted || isActive ? 'white' : 'var(--color-text-muted)',
+                  ...styles.stepItem,
+                  cursor: isClickable ? 'pointer' : 'default',
                 }}
+                onClick={() => isClickable && onStepClick && onStepClick(step.id)}
               >
-                {isCompleted ? <Check size={14} strokeWidth={3} /> : step.id}
+                {/* Icon Container */}
+                <motion.div 
+                  initial={false}
+                  animate={{
+                    scale: isActive ? 1.15 : 1,
+                    backgroundColor: isActive ? 'var(--color-primary)' : (isCompleted ? 'var(--color-green)' : 'var(--color-bg-card)'),
+                    borderColor: isActive ? 'var(--color-primary)' : (isCompleted ? 'var(--color-green)' : 'var(--color-border)'),
+                    boxShadow: isActive ? '0 10px 20px rgba(79, 70, 229, 0.2)' : 'none'
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  style={styles.iconCircle}
+                >
+                  <AnimatePresence mode="wait">
+                    {isCompleted ? (
+                      <motion.div
+                        key="check"
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <Check size={18} color="white" strokeWidth={3} />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="icon"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ display: 'flex' }}
+                      >
+                        <Icon 
+                          size={18} 
+                          color={isActive ? 'white' : 'var(--color-text-muted)'} 
+                          strokeWidth={isActive ? 2.5 : 2}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Pulsing Aura for Active Step */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="aura"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1.5, opacity: 0 }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--color-primary)',
+                        zIndex: -1
+                      }}
+                    />
+                  )}
+                </motion.div>
+
+                {/* Text Label */}
+                <div style={styles.textWrapper}>
+                  <motion.span 
+                    animate={{
+                      color: isActive ? 'var(--color-text-main)' : 'var(--color-text-muted)',
+                      y: isActive ? -2 : 0,
+                    }}
+                    style={{
+                      ...styles.stepLabel,
+                      fontWeight: isActive ? '700' : '500',
+                    }}
+                  >
+                    {step.name}
+                  </motion.span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="activeIndicator"
+                      style={styles.activeDot}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </div>
               </div>
-              <span style={{
-                ...styles.label,
-                color: isActive ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-                fontWeight: isActive ? '600' : '400',
-              }}>
-                {step.name}
-              </span>
-            </div>
-            {index < steps.length - 1 && (
-              <div style={styles.line}>
-                <div style={{
-                  ...styles.lineProgress,
-                  width: isCompleted ? '100%' : '0%',
-                }} />
-              </div>
-            )}
-          </React.Fragment>
-        );
-      })}
+              
+              {/* Connector Line */}
+              {index < steps.length - 1 && (
+                <div style={styles.connector}>
+                  <motion.div 
+                    initial={{ width: '0%' }}
+                    animate={{ width: isCompleted ? '100%' : '0%' }}
+                    transition={{ duration: 0.8, ease: 'easeInOut' }}
+                    style={styles.connectorProgress} 
+                  />
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
+    width: '100%',
+    padding: '32px 0 48px',
+    display: 'flex',
+    justifyContent: 'center',
+    overflow: 'visible'
+  },
+  stepsWrapper: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    maxWidth: '600px',
-    margin: '0 auto',
+    width: '100%',
+    maxWidth: '850px',
+    padding: '0 40px',
   },
-  stepWrapper: {
+  stepItem: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '8px',
-    zIndex: 1,
+    gap: '12px',
+    position: 'relative',
+    zIndex: 10,
   },
-  circle: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
+  iconCircle: {
+    position: 'relative',
+    width: '44px',
+    height: '44px',
+    borderRadius: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '700',
-    border: '1.5px solid',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '2px solid',
   },
-  label: {
-    fontSize: '12px',
-    whiteSpace: 'nowrap',
+  textWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+    height: '24px',
   },
-  line: {
+  stepLabel: {
+    fontSize: '13px',
+    letterSpacing: '-0.3px',
+    transition: 'color 0.3s',
+  },
+  activeDot: {
+    width: '12px',
+    height: '3px',
+    borderRadius: '2px',
+    backgroundColor: 'var(--color-primary)',
+  },
+  connector: {
     flex: 1,
-    height: '2px',
-    backgroundColor: 'var(--color-border)',
-    margin: '0 12px',
-    marginTop: '-20px', // Align with circles
+    height: '4px',
+    backgroundColor: 'var(--color-bg-app)',
+    margin: '0 -15px',
+    marginTop: '-32px',
     position: 'relative',
+    borderRadius: '99px',
     overflow: 'hidden',
+    zIndex: 1
   },
-  lineProgress: {
+  connectorProgress: {
     position: 'absolute',
     top: 0,
     left: 0,
     height: '100%',
-    backgroundColor: '#3B6D11',
-    transition: 'width 0.4s ease',
+    backgroundColor: 'var(--color-green)',
+    boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
   }
 };
 

@@ -59,40 +59,36 @@ export async function PATCH(
 
     const verdict = normalizeVerdict(rawVerdict);
 
-    // Ensure all metrics are numbers for the database and for calculation
-    const nIntent = Number(intent) || 0;
-    const nAuthority = Number(authority) || 0;
-    const nDemo = Number(demo_commitment) || 0;
-    const nTimeline = Number(timeline) || 0;
-    const nIndustry = Number(industry_fit) || 0;
+    // Build the update payload dynamically based on provided fields
+    const updateData: any = {};
+    if (transcript !== undefined) updateData.transcript = transcript;
+    if (verdict !== undefined) updateData.verdict = verdict;
+    if (reasoning !== undefined) updateData.reasoning = reasoning;
+    if (risk_level !== undefined) updateData.risk_level = risk_level;
+    if (status !== undefined) updateData.status = status;
+    if (aiProvider !== undefined) updateData.aiProvider = aiProvider;
+    if (disqualificationComment !== undefined) updateData.disqualificationComment = disqualificationComment;
 
-    // Ensure score matches sum of sub-metrics
-    const calculatedScore = nIntent + nAuthority + nDemo + nTimeline + nIndustry;
-    let finalScore = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
+    if (intent !== undefined) updateData.intent = Number(intent) || 0;
+    if (authority !== undefined) updateData.authority = Number(authority) || 0;
+    if (demo_commitment !== undefined) updateData.demo_commitment = Number(demo_commitment) || 0;
+    if (timeline !== undefined) updateData.timeline = Number(timeline) || 0;
+    if (industry_fit !== undefined) updateData.industry_fit = Number(industry_fit) || 0;
+
+    // Recalculate score if sub-metrics were provided, otherwise use provided score
+    if (intent !== undefined || authority !== undefined) {
+      const calculatedScore = (updateData.intent || 0) + (updateData.authority || 0) + (updateData.demo_commitment || 0) + (updateData.timeline || 0) + (updateData.industry_fit || 0);
+      updateData.score = calculatedScore > 0 ? calculatedScore : (Number(score) || 0);
+    } else if (score !== undefined) {
+      updateData.score = Number(score) || 0;
+    }
 
     // CRITICAL: If verdict is "Not Qualified", force score to 0 to ensure consistency
     if (verdict === 'Not Qualified') {
-      finalScore = 0;
+      updateData.score = 0;
     }
 
-    // Normalize AI provider
-    const finalAiProvider = aiProvider || undefined; // Don't overwrite with null if missing in update
-
-    const updated = await db.lead.update(id, {
-      transcript,
-      verdict,
-      score: finalScore,
-      reasoning,
-      intent: nIntent,
-      authority: nAuthority,
-      demo_commitment: nDemo,
-      timeline: nTimeline,
-      industry_fit: nIndustry,
-      risk_level,
-      status: status || 'ANALYZED',
-      aiProvider: finalAiProvider,
-      disqualificationComment
-    });
+    const updated = await db.lead.update(id, updateData);
 
     if (!updated) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });

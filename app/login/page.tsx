@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 
 function LoginForm() {
   const { data: session, status } = useSession();
@@ -67,15 +67,15 @@ function LoginForm() {
     <>
       <div style={styles.iconHeader}>
         <div style={styles.lockCircle}>
-          <Lock size={24} color="var(--color-primary)" />
+          <ShieldCheck size={28} color="var(--color-primary)" />
         </div>
       </div>
       
-      <h2 className="outfit-font" style={{ textAlign: 'center', marginBottom: '12px', fontSize: '26px', fontWeight: '800', color: 'var(--color-text-main)' }}>
-        Welcome Back
+      <h2 className="outfit-font" style={{ textAlign: 'center', marginBottom: '12px', fontSize: '28px', fontWeight: '800', color: 'var(--color-text-main)', letterSpacing: '-0.5px' }}>
+        Call QA
       </h2>
-      <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', marginBottom: '32px', fontSize: '14px' }}>
-        Please enter your credentials to access the platform.
+      <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', marginBottom: '32px', fontSize: '15px' }}>
+        Sign in to manage your call quality insights.
       </p>
 
       {error && (
@@ -84,7 +84,7 @@ function LoginForm() {
         </div>
       )}
 
-      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div>
           <label style={styles.label}>Username</label>
           <input 
@@ -92,9 +92,8 @@ function LoginForm() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="text-input"
             placeholder="Enter your username"
-            style={{ width: '100%', boxSizing: 'border-box' }}
+            style={styles.input}
             disabled={isLoading}
           />
         </div>
@@ -106,9 +105,8 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="text-input"
             placeholder="Enter your password"
-            style={{ width: '100%', boxSizing: 'border-box' }}
+            style={styles.input}
             disabled={isLoading}
           />
         </div>
@@ -117,9 +115,9 @@ function LoginForm() {
           type="submit" 
           className="primary-button" 
           disabled={isLoading || !username.trim() || !password.trim()}
-          style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '12px', height: '48px' }}
+          style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '8px', height: '52px', fontSize: '16px' }}
         >
-          {isLoading ? <Loader2 size={18} className="spin" /> : 'Log In to Dashboard'}
+          {isLoading ? <Loader2 size={20} className="spin" /> : 'Access Dashboard'}
         </button>
       </form>
     </>
@@ -129,6 +127,10 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div style={styles.container}>
+      {/* Abstract Background Decoration */}
+      <div style={styles.bgBlob1} />
+      <div style={styles.bgBlob2} />
+      
       <div className="card fade-in" style={styles.card}>
         <Suspense fallback={
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
@@ -137,8 +139,9 @@ export default function LoginPage() {
         }>
           <LoginForm />
         </Suspense>
-        <p style={{ marginTop: '32px', textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-          Contact your administrator if you've forgotten your password.
+        <p style={{ marginTop: '32px', textAlign: 'center', fontSize: '13px', color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
+          By logging in, you agree to our Terms of Service.<br />
+          Contact support for access issues.
         </p>
       </div>
     </div>
@@ -151,16 +154,22 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB', // Light gray background
+    backgroundColor: 'var(--color-bg-app)',
     padding: '24px',
+    position: 'relative',
+    overflow: 'hidden',
   },
   card: {
     width: '100%',
-    maxWidth: '420px',
+    maxWidth: '440px',
     padding: '48px 40px',
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'var(--color-bg-card)',
+    borderRadius: '24px',
+    border: '1px solid var(--color-border)',
+    boxShadow: '0 25px 50px -12px var(--color-shadow)',
+    zIndex: 10,
+    position: 'relative',
+    backdropFilter: 'blur(10px)',
   },
   iconHeader: {
     display: 'flex',
@@ -168,30 +177,62 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '24px',
   },
   lockCircle: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '50%',
+    width: '64px',
+    height: '64px',
+    borderRadius: '18px',
     backgroundColor: 'var(--color-primary-light)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    border: '1px solid rgba(139, 92, 246, 0.2)',
   },
   label: {
     display: 'block',
     fontSize: '13px',
     fontWeight: '600',
-    marginBottom: '8px',
+    marginBottom: '10px',
     color: 'var(--color-text-main)',
+    letterSpacing: '0.3px',
+  },
+  input: {
+    width: '100%',
+    height: '50px',
+    padding: '0 16px',
+    backgroundColor: 'var(--color-bg-hover)',
+    border: '1px solid var(--color-border)',
+    borderRadius: '12px',
+    color: 'var(--color-text-main)',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s ease',
   },
   errorBox: {
-    backgroundColor: '#FEF2F2',
-    color: '#DC2626',
-    padding: '12px',
-    borderRadius: '8px',
+    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+    color: 'var(--color-red)',
+    padding: '14px',
+    borderRadius: '12px',
     marginBottom: '24px',
     fontSize: '14px',
     textAlign: 'center',
-    border: '1px solid #FEE2E2',
-    fontWeight: '500',
+    border: '1px solid rgba(244, 63, 94, 0.2)',
+    fontWeight: '600',
+  },
+  bgBlob1: {
+    position: 'absolute',
+    top: '-10%',
+    left: '-10%',
+    width: '40%',
+    height: '40%',
+    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0) 70%)',
+    zIndex: 1,
+  },
+  bgBlob2: {
+    position: 'absolute',
+    bottom: '-10%',
+    right: '-10%',
+    width: '40%',
+    height: '40%',
+    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%)',
+    zIndex: 1,
   }
 };

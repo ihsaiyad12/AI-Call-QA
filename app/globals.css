@@ -1,27 +1,72 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-  --color-primary: #4F46E5;
-  --color-primary-light: #EEF2FF;
-  --color-primary-dark: #3730A3;
+  /* Core Dark Theme Palette (Default) */
+  --color-bg-app: #0f172a;        /* Deep Slate Blue */
+  --color-bg-card: #1e293b;       /* Lighter Slate Blue */
+  --color-bg-sidebar: #0a0e17;    /* Near Black */
   
-  --color-green: #10B981;
-  --color-green-bg: #D1FAE5;
+  --color-primary: #8b5cf6;       /* Vibrant Violet */
+  --color-primary-light: rgba(139, 92, 246, 0.1);
+  --color-primary-dark: #7c3aed;
   
-  --color-amber: #F59E0B;
-  --color-amber-bg: #FEF3C7;
+  --color-green: #22c55e;        /* Vibrant Emerald */
+  --color-green-bg: rgba(34, 197, 94, 0.15);
   
-  --color-red: #EF4444;
-  --color-red-bg: #FEE2E2;
+  --color-amber: #f59e0b;        /* Golden Amber */
+  --color-amber-bg: rgba(245, 158, 11, 0.15);
   
-  --color-border: #E5E7EB;
-  --color-text-main: #111827;
-  --color-text-muted: #6B7280;
-  --color-bg-app: #F9FAFB;
-  --color-bg-card: #FFFFFF;
+  --color-red: #f43f5e;          /* Vibrant Rose-Red */
+  --color-red-bg: rgba(244, 63, 94, 0.15);
+  
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.15);
+  --color-bg-hover: rgba(255, 255, 255, 0.05);
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  
+  --color-text-main: #f8fafc;     /* Off-white */
+  --color-text-muted: #cbd5e1;    /* Lighter Gray for better contrast */
+  --color-text-dim: #94a3b8;      /* Lighter Dim Gray */
 
   --font-inter: 'Inter', sans-serif;
   --font-outfit: 'Outfit', sans-serif;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='light'] {
+  /* Light Theme Palette */
+  --color-bg-app: #f1f5f9;        /* Light Slate */
+  --color-bg-card: #ffffff;       /* Pure White */
+  --color-bg-sidebar: #e2e8f0;    /* Darker Slate */
+  
+  --color-primary: #7c3aed;       /* Slightly darker primary for contrast */
+  --color-primary-light: rgba(124, 58, 237, 0.1);
+  --color-primary-dark: #6d28d9;
+  
+  --color-green: #16a34a;        
+  --color-green-bg: rgba(22, 163, 74, 0.15);
+  
+  --color-amber: #d97706;        
+  --color-amber-bg: rgba(217, 119, 6, 0.15);
+  
+  --color-red: #e11d48;          
+  --color-red-bg: rgba(225, 29, 72, 0.15);
+  
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-hover: rgba(0, 0, 0, 0.2);
+  --color-bg-hover: rgba(0, 0, 0, 0.05);
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  
+  --color-text-main: #0f172a;     /* Near black */
+  --color-text-muted: #475569;    /* Dark gray */
+  --color-text-dim: #94a3b8;      /* Lighter gray */
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -36,25 +81,29 @@ body {
   color: var(--color-text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, .outfit-font {
   font-family: var(--font-outfit);
+  color: var(--color-text-main);
 }
 
+/* Base Card Style */
 .card {
-  background: white;
-  border-radius: 24px;
+  background: var(--color-bg-card);
+  border-radius: 20px;
   border: 1px solid var(--color-border);
   padding: 24px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .saas-card {
-  background: white;
+  background: var(--color-bg-card);
   border-radius: 12px;
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .container {
@@ -64,133 +113,103 @@ h1, h2, h3, h4, .outfit-font {
   padding: 40px 20px;
 }
 
+/* Button Styling */
 button {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 .primary-button {
   background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px 28px;
-  font-weight: 600;
-  font-size: 16px;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  opacity: 1;
-  cursor: pointer;
-}
-
-.primary-button:disabled {
-  background-color: #D1D1D1; /* Light gray for disabled state */
-  color: #8E8E8E;
-  opacity: 0.7;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none !important;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .primary-button:hover:not(:disabled) {
-  background-color: #4338CA; /* Slightly darker primary on hover */
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
 }
 
-.primary-button:active:not(:disabled) {
-  background-color: #3730A3; /* Even darker primary when clicked */
-  transform: translateY(0);
+.primary-button:disabled {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
-/* Glassmorphism utility */
+/* Glassmorphism */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-sidebar);
+  opacity: 0.85;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+}
+
+/* Form Elements */
+input, textarea, select {
+  background-color: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  border-radius: 12px;
+  padding: 12px 16px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-.analyze-hover {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--color-primary);
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.analyze-hover:hover {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-/* Custom Table Scrollbar */
-div[style*="overflowX: 'auto'"]::-webkit-scrollbar,
-.card div::-webkit-scrollbar {
-  height: 8px;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-div[style*="overflowX: 'auto'"]::-webkit-scrollbar-track,
-.card div::-webkit-scrollbar-track {
-  background: #f1f1f1;
+::-webkit-scrollbar-track {
+  background: var(--color-bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-hover);
   border-radius: 10px;
 }
 
-div[style*="overflowX: 'auto'"]::-webkit-scrollbar-thumb,
-.card div::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 10px;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
 }
 
-div[style*="overflowX: 'auto'"]::-webkit-scrollbar-thumb:hover,
-.card div::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary);
-}
-
-/* Hide scrollbar but keep functionality */
+/* Utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(1.3); }
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
-}
-
-.spin-animation {
-  animation: spin 1s linear infinite;
 }
 
 .spin {

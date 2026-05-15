@@ -89,11 +89,11 @@ const styles: Record<string, React.CSSProperties> = {
     top: 0,
     zIndex: 100,
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: 'var(--color-bg-card)',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
     borderBottom: '1px solid var(--color-border)',
-    boxShadow: '0 1px 12px rgba(0,0,0,0.04)',
+    boxShadow: '0 1px 12px var(--color-shadow)',
   },
   inner: {
     maxWidth: '1400px',

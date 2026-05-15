@@ -141,6 +141,29 @@ export async function GET(req: Request) {
       });
     }
 
+    // 5. Daily Trend (Last 30 days or selected period)
+    const dailyTrend = await Lead.aggregate([
+      {
+        $match: baseQuery
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          analyzed: { $sum: { $cond: [{ $in: ['$status', ['ANALYZED', 'PUSHED_TO_CRM']] }, 1, 0] } },
+          pushed: { $sum: { $cond: [{ $eq: ['$status', 'PUSHED_TO_CRM'] }, 1, 0] } },
+        }
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          date: '$_id',
+          analyzed: 1,
+          pushed: 1,
+          _id: 0
+        }
+      }
+    ]);
+
     return NextResponse.json({
       kpis: {
         totalLeads,
@@ -152,6 +175,7 @@ export async function GET(req: Request) {
       },
       agentPerformance,
       verdicts: formattedVerdicts,
+      dailyTrend,
     });
   } catch (error) {
     console.error('Failed to fetch analytics:', error);

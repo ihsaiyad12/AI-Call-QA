@@ -45,6 +45,7 @@ export const normalizeAnalysisResult = (result: Partial<AnalysisResult>): Analys
   const hasHardDisqualification =
     requestedVerdict === 'Not Qualified' ||
     industry_fit === 0 ||
+    demo_commitment === 0 ||
     componentTotal < 40;
 
   if (hasHardDisqualification) {

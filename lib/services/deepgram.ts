@@ -42,7 +42,7 @@ export const transcribeAudio = async (
     const result = await deepgram.listen.v1.media.transcribeFile(
       { data: buffer, contentType: mimetype },
       {
-        model: 'nova-2',
+        model: 'nova-3',
         smart_format: true,
         diarize: true,
         paragraphs: true,

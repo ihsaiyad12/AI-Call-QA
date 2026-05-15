@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getPromptForCategory } from './prompts';
 import { AnalysisResult, LeadData } from '@/types';
+import { normalizeAnalysisResult } from '../scoreNormalization';
 
 // Helper to clean JSON from AI responses (strips markdown code fences)
 const cleanAIResponse = (text: string): string => {
@@ -48,7 +49,8 @@ export const scoreWithGroq = async (transcript: string, leadData?: Partial<LeadD
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
   });
 
-  return JSON.parse(response.data.choices[0].message.content);
+  const rawResult = JSON.parse(response.data.choices[0].message.content);
+  return normalizeAnalysisResult(rawResult);
 };
 
 export const scoreWithGemini = async (transcript: string, leadData?: Partial<LeadData>): Promise<AnalysisResult> => {
@@ -63,7 +65,8 @@ export const scoreWithGemini = async (transcript: string, leadData?: Partial<Lea
   });
 
   const content = response.data.candidates[0].content.parts[0].text;
-  return JSON.parse(cleanAIResponse(content));
+  const rawResult = JSON.parse(cleanAIResponse(content));
+  return normalizeAnalysisResult(rawResult);
 };
 
 export const scoreWithOpenAI = async (transcript: string, leadData?: Partial<LeadData>): Promise<AnalysisResult> => {
@@ -84,7 +87,8 @@ export const scoreWithOpenAI = async (transcript: string, leadData?: Partial<Lea
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
   });
 
-  return JSON.parse(response.data.choices[0].message.content);
+  const rawResult = JSON.parse(response.data.choices[0].message.content);
+  return normalizeAnalysisResult(rawResult);
 };
 
 export const scoreWithClaude = async (transcript: string, leadData?: Partial<LeadData>): Promise<AnalysisResult> => {
@@ -109,7 +113,8 @@ export const scoreWithClaude = async (transcript: string, leadData?: Partial<Lea
     });
 
     const content = response.data.content[0].text;
-    return JSON.parse(cleanAIResponse(content));
+    const rawResult = JSON.parse(cleanAIResponse(content));
+    return normalizeAnalysisResult(rawResult);
   } catch (error: any) {
     if (error.response) {
       console.error('Claude API Error Details:', JSON.stringify(error.response.data, null, 2));
