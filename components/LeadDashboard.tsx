@@ -25,7 +25,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
   const [todayStats, setTodayStats] = useState({ analyzed: 0, pushed: 0, pending: 0 });
 
   useEffect(() => {
-    const analyzedCount = leads.filter(l => l.status === 'ANALYZED').length;
+    const analyzedCount = leads.filter(l => l.status === 'ANALYZED' || l.status === 'PUSHED_TO_CRM').length;
     const pushedCount = leads.filter(l => l.status === 'PUSHED_TO_CRM').length;
     const pendingCount = leads.filter(l => l.status === 'PENDING').length;
     setTodayStats({ analyzed: analyzedCount, pushed: pushedCount, pending: pendingCount });
@@ -132,11 +132,16 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     }
   };
 
-  const fetchLeads = async (silent = false) => {
+  const fetchLeads = async (silent = false, customSearchTerm = searchTerm) => {
     if (!silent) setLoading(true);
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/leads?startDate=${startDate}&endDate=${endDate}`);
+      let url = `/api/leads?startDate=${startDate}&endDate=${endDate}`;
+      // If there is an active search term of 2 or more characters, query globally to find any historical match
+      if (customSearchTerm.trim().length >= 2) {
+        url = `/api/leads?q=${encodeURIComponent(customSearchTerm.trim())}`;
+      }
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch leads');
       const data = await res.json();
       setLeads(data);
@@ -149,37 +154,52 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     }
   };
 
-  const fetchTodayStats = async () => {
-    try {
-      const res = await fetch(`/api/analytics?startDate=${startDate}&endDate=${endDate}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTodayStats(prev => ({
-          ...prev,
-          pushed: data.kpis.pushedToday || 0,
-          analyzed: data.kpis.analyzedToday || 0
-        }));
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
-  };
-
+  // Fetch leads when date range changes (only if not searching)
   useEffect(() => {
-    fetchLeads();
-    fetchTodayStats();
+    if (searchTerm.trim().length < 2) {
+      fetchLeads();
+    }
   }, [startDate, endDate]);
 
+  // Debounce search input fetching and reset page to 1
+  useEffect(() => {
+    setCurrentPage(1);
+
+    if (searchTerm.trim().length >= 2) {
+      const handler = setTimeout(() => {
+        fetchLeads(true, searchTerm);
+      }, 400);
+
+      return () => clearTimeout(handler);
+    } else {
+      fetchLeads(true, searchTerm);
+    }
+  }, [searchTerm]);
+
+  // Handle external manual refreshes
   useEffect(() => {
     if (refreshTrigger > 0) {
-      fetchLeads(true);
-      fetchTodayStats();
+      fetchLeads(true, searchTerm);
     }
   }, [refreshTrigger]);
 
+  // Real-time polling every 5 seconds to sync new agent submissions in real-time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLeads(true, searchTerm);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [startDate, endDate, searchTerm]);
+
+  // Guard against null/undefined fields, perform instant client-side match, and sort results
   const filteredLeads = leads.filter(lead => {
-    const searchStr = `${lead.firstName} ${lead.lastName} ${lead.email} ${lead.phone}`.toLowerCase();
-    const matchesSearch = searchStr.includes(searchTerm.toLowerCase());
+    const firstName = lead.firstName || '';
+    const lastName = lead.lastName || '';
+    const email = lead.email || '';
+    const phone = lead.phone || '';
+    const searchStr = `${firstName} ${lastName} ${email} ${phone}`.toLowerCase();
+    const matchesSearch = searchStr.includes(searchTerm.toLowerCase().trim());
     const matchesStatus = statusFilter === 'ALL' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
