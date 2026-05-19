@@ -284,31 +284,31 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
             <div style={styles.kpiIconWrapper}><CloudUpload size={18} color="var(--color-primary)" /></div>
           </div>
           <div style={styles.kpiBody}>
-            <h2 style={styles.kpiValue}>{data.kpis.pushedLeads}</h2>
+            <h2 style={styles.kpiValue}>{data.verdicts.sql + data.verdicts.borderline}</h2>
           </div>
         </motion.div>
 
         <motion.div layout variants={itemVariants} style={styles.kpiCard} whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.06)' }}>
           <div style={styles.kpiHeader}>
             <span style={styles.kpiLabel}>
-              {startDate === endDate ? `Pushed on ${startDate}` : `Pushed in Period`}
+              {startDate === endDate ? `Disqualified on ${startDate}` : `Disqualified Leads`}
+            </span>
+            <div style={styles.kpiIconWrapper}><XCircle size={18} color="var(--color-primary)" /></div>
+          </div>
+          <div style={styles.kpiBody}>
+            <h2 style={styles.kpiValue}>{data.verdicts.notQualified}</h2>
+          </div>
+        </motion.div>
+
+        <motion.div layout variants={itemVariants} style={styles.kpiCard} whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.06)' }}>
+          <div style={styles.kpiHeader}>
+            <span style={styles.kpiLabel}>
+              {startDate === endDate ? `Qualified on ${startDate}` : `Qualified Leads`}
             </span>
             <div style={styles.kpiIconWrapper}><Target size={18} color="var(--color-primary)" /></div>
           </div>
           <div style={styles.kpiBody}>
-            <h2 style={styles.kpiValue}>{data.kpis.pushedToday}</h2>
-          </div>
-        </motion.div>
-
-        <motion.div layout variants={itemVariants} style={styles.kpiCard} whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.06)' }}>
-          <div style={styles.kpiHeader}>
-            <span style={styles.kpiLabel}>
-              {startDate === endDate ? `Analyzed on ${startDate}` : `Analyzed in Period`}
-            </span>
-            <div style={styles.kpiIconWrapper}><TrendingUp size={18} color="var(--color-primary)" /></div>
-          </div>
-          <div style={styles.kpiBody}>
-            <h2 style={styles.kpiValue}>{data.kpis.analyzedToday}</h2>
+            <h2 style={styles.kpiValue}>{data.verdicts.sql}</h2>
           </div>
         </motion.div>
 

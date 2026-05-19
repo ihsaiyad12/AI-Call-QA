@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import axios from 'axios';
+import { eventEmitter } from '@/lib/events';
 
 const HUBSPOT_PORTAL_ID = '6107502';
 const HUBSPOT_FORM_GUID = '0bf35c2a-3bb0-4aaf-9acb-9e72c9f1b105';
@@ -64,7 +65,8 @@ ${lead.transcript || 'N/A'}
     console.log('[HubSpot] Response status:', hsResponse.status, 'Data:', JSON.stringify(hsResponse.data));
 
     // Mark as pushed in local DB
-    await db.lead.update(id, { status: 'PUSHED_TO_CRM' });
+    const updated = await db.lead.update(id, { status: 'PUSHED_TO_CRM' });
+    eventEmitter.emit('update-lead', updated);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

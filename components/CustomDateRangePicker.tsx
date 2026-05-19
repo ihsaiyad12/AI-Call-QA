@@ -150,7 +150,15 @@ export default function CustomDateRangePicker({ startDate, endDate, onRangeChang
                     <input 
                       type="date" 
                       value={startDate} 
-                      onChange={e => onRangeChange(e.target.value, endDate, 'Custom')} 
+                      max={endDate}
+                      onChange={e => {
+                        const newStart = e.target.value;
+                        if (endDate && newStart > endDate) {
+                          onRangeChange(newStart, newStart, 'Custom');
+                        } else {
+                          onRangeChange(newStart, endDate, 'Custom');
+                        }
+                      }} 
                       style={styles.dateInput}
                     />
                   </div>
@@ -160,7 +168,15 @@ export default function CustomDateRangePicker({ startDate, endDate, onRangeChang
                     <input 
                       type="date" 
                       value={endDate} 
-                      onChange={e => onRangeChange(startDate, e.target.value, 'Custom')} 
+                      min={startDate}
+                      onChange={e => {
+                        const newEnd = e.target.value;
+                        if (startDate && newEnd < startDate) {
+                          onRangeChange(newEnd, newEnd, 'Custom');
+                        } else {
+                          onRangeChange(startDate, newEnd, 'Custom');
+                        }
+                      }} 
                       style={styles.dateInput}
                     />
                   </div>

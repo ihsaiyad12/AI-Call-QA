@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import axios from 'axios';
+import { eventEmitter } from '@/lib/events';
 
 const HUBSPOT_PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
 const HUBSPOT_FORM_GUID = process.env.HUBSPOT_FORM_GUID;
@@ -94,6 +95,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    eventEmitter.emit('update-lead', updated);
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error('Update Lead Error:', error);
@@ -122,6 +124,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Lead not found or could not be deleted' }, { status: 404 });
     }
 
+    eventEmitter.emit('update-lead', { id, deleted: true });
     return NextResponse.json({ success: true, message: 'Lead deleted successfully' });
   } catch (error: any) {
     console.error('Delete Lead Error:', error);
@@ -184,7 +187,8 @@ ${lead.transcript || 'N/A'}
     console.log('[HubSpot] Response:', hsResponse.status, JSON.stringify(hsResponse.data, null, 2));
 
     // Mark as pushed in local DB
-    await db.lead.update(id, { status: 'PUSHED_TO_CRM' });
+    const updated = await db.lead.update(id, { status: 'PUSHED_TO_CRM' });
+    eventEmitter.emit('update-lead', updated);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

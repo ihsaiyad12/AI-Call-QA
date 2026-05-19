@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import db from '@/lib/db';
 import axios from 'axios';
+import { eventEmitter } from '@/lib/events';
 
 function parseReoonStatus(data: any): string {
   const status: string = (data?.status ?? data?.data?.status ?? 'unknown').toLowerCase().trim();
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
       }
     }
 
+    eventEmitter.emit('new-lead', lead);
     return NextResponse.json(lead);
   } catch (error: any) {
     console.error('Agent Intake Error:', error);
@@ -135,6 +137,7 @@ export async function PATCH(req: Request) {
       jobTitle
     });
 
+    eventEmitter.emit('update-lead', updatedLead);
     return NextResponse.json(updatedLead);
   } catch (error: any) {
     console.error('Agent Lead Update Error:', error);

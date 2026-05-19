@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import axios from 'axios';
+import { eventEmitter } from '@/lib/events';
 
 // Reoon status field → human-readable label
 function parseReoonStatus(data: any): string {
@@ -162,6 +163,7 @@ export async function POST(req: Request) {
       // Still trigger email verification if it wasn't done or if we want to refresh it
       // (Optional: you could skip this if existingLead.emailStatus is already set)
       
+      eventEmitter.emit('update-lead', updated);
       return NextResponse.json(updated);
     }
 
@@ -203,6 +205,7 @@ export async function POST(req: Request) {
     }
 
     console.log('[Leads] Returning lead with emailStatus:', lead.emailStatus);
+    eventEmitter.emit('new-lead', lead);
     return NextResponse.json(lead);
   } catch (error: any) {
     console.error('Create Lead Error:', error);

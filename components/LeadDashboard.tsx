@@ -183,11 +183,56 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     }
   }, [refreshTrigger]);
 
-  // Real-time polling every 5 seconds to sync new agent submissions in real-time
+  // Real-time instant sync via Server-Sent Events (SSE) - Zero-delay updates
+  useEffect(() => {
+    const eventSource = new EventSource('/api/leads/stream');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const newLead = JSON.parse(event.data);
+        setLeads((prev) => {
+          // Prevent duplicates
+          if (prev.some((l) => l.id === newLead.id)) return prev;
+          // Prepend the new lead so it shows at the top instantly
+          return [newLead, ...prev];
+        });
+      } catch (err) {
+        console.error('Failed to parse SSE new-lead:', err);
+      }
+    };
+
+    eventSource.addEventListener('update-lead', (event: MessageEvent) => {
+      try {
+        const updatedLead = JSON.parse(event.data);
+        setLeads((prev) => {
+          if (updatedLead.deleted) {
+            return prev.filter((l) => l.id !== updatedLead.id);
+          }
+          // If the lead doesn't exist in state yet, prepend it
+          if (!prev.some((l) => l.id === updatedLead.id)) {
+            return [updatedLead, ...prev];
+          }
+          return prev.map((l) => (l.id === updatedLead.id ? updatedLead : l));
+        });
+      } catch (err) {
+        console.error('Failed to parse SSE update-lead:', err);
+      }
+    });
+
+    eventSource.onerror = (err) => {
+      console.warn('SSE connection encountered an error. EventSource will auto-reconnect...', err);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  // Failsafe polling fallback (runs every 15 seconds silently in case SSE is blocked by proxies)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchLeads(true, searchTerm);
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [startDate, endDate, searchTerm]);
