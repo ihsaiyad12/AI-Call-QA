@@ -436,6 +436,37 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
             </AnimatePresence>
           </div>
 
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => fetchLeads(true, searchTerm)} 
+            disabled={isRefreshing}
+            style={{
+              ...styles.exportButton,
+              backgroundColor: isRefreshing ? 'var(--color-bg-hover)' : 'var(--color-bg-card)',
+              opacity: isRefreshing ? 0.7 : 1,
+              cursor: isRefreshing ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 16px',
+            }}
+            title="Refresh Leads Table"
+          >
+            {isRefreshing ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Loader2 size={16} style={{ color: 'var(--color-primary)' }} />
+              </motion.div>
+            ) : (
+              <RefreshCcw size={16} style={{ color: 'var(--color-primary)' }} />
+            )}
+            <span style={{ fontWeight: 600, color: 'var(--color-text-main)', marginLeft: '8px' }}>Refresh</span>
+          </motion.button>
+
           <button onClick={downloadExcel} style={styles.exportButton} title="Export to Excel">
             <Download size={16} />
             <span style={{ fontWeight: 600 }}>Export</span>
