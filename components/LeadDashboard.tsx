@@ -255,10 +255,17 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     const matchesStatus = statusFilter === 'ALL' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    if (scoreSort === 'NONE') return 0;
-    const sA = a.score || 0;
-    const sB = b.score || 0;
-    return scoreSort === 'ASC' ? sA - sB : sB - sA;
+    if (scoreSort !== 'NONE') {
+      const sA = a.score || 0;
+      const sB = b.score || 0;
+      return scoreSort === 'ASC' ? sA - sB : sB - sA;
+    }
+    // Default sort: PENDING leads first, then by date descending
+    if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+    if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
   });
 
   const getStatusBadge = (status: string) => {
