@@ -88,16 +88,15 @@ export const db = {
       if (!id || id === 'undefined' || id === 'null') return null;
       await dbConnect();
       try {
-        let lead = await Lead.findById(id);
+        let lead = await Lead.findById(id).lean();
         
         if (!lead) {
-          lead = await Lead.findOne({ $or: [{ _id: id }, { id: id }] });
+          lead = await Lead.findOne({ $or: [{ _id: id }, { id: id }] }).lean();
         }
 
         if (!lead) return null;
         
-        const obj = lead.toObject();
-        return { ...obj, id: obj._id.toString() };
+        return { ...lead, id: (lead as any)._id.toString() };
       } catch (err) {
         return null;
       }
@@ -105,10 +104,9 @@ export const db = {
 
     async findOne(filter: any) {
       await dbConnect();
-      const lead = await Lead.findOne(filter);
+      const lead = await Lead.findOne(filter).lean();
       if (!lead) return null;
-      const obj = lead.toObject();
-      return { ...obj, id: obj._id.toString() };
+      return { ...lead, id: (lead as any)._id.toString() };
     },
 
     /**
@@ -129,13 +127,10 @@ export const db = {
     /**
      * Get all leads sorted by newest first, with optional filters
      */
-    async findMany(filter: any = {}) {
+    async findMany(filter: any = {}, sort: any = { createdAt: -1 }) {
       await dbConnect();
-      const leads = await Lead.find(filter).sort({ createdAt: -1 });
-      return leads.map(l => {
-        const obj = l.toObject();
-        return { ...obj, id: obj._id.toString() };
-      });
+      const leads = await Lead.find(filter).sort(sort).lean();
+      return leads.map((l: any) => ({ ...l, id: l._id.toString() }));
     },
 
     /**
@@ -157,12 +152,10 @@ export const db = {
         ...filter
       })
       .sort({ status: 1, createdAt: -1 }) // PENDING first, then newest
-      .limit(10);
+      .limit(10)
+      .lean();
 
-      return leads.map(l => {
-        const obj = l.toObject();
-        return { ...obj, id: obj._id.toString() };
-      });
+      return leads.map((l: any) => ({ ...l, id: l._id.toString() }));
     },
   },
 };

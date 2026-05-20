@@ -20,11 +20,9 @@ export async function GET(req: Request) {
     if (start || end) {
       baseQuery.createdAt = {};
       if (start) {
-        // new Date('YYYY-MM-DD') defaults to UTC midnight
         baseQuery.createdAt.$gte = new Date(start);
       }
       if (end) {
-        // Include full end day in UTC
         const endDay = new Date(end);
         endDay.setUTCHours(23, 59, 59, 999);
         baseQuery.createdAt.$lte = endDay;
@@ -33,90 +31,122 @@ export async function GET(req: Request) {
 
     await dbConnect();
 
-    // 1. Fetch KPI Totals
-    const totalLeads = await Lead.countDocuments(baseQuery);
-    const analyzedLeads = await Lead.countDocuments({ ...baseQuery, status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] } });
-    const pushedLeads = await Lead.countDocuments({ ...baseQuery, status: 'PUSHED_TO_CRM' });
-    const disqualifiedLeads = await Lead.countDocuments({ ...baseQuery, verdict: 'Not Qualified' });
+    // Run ALL queries in parallel instead of sequentially
+    const [
+      totalLeads,
+      analyzedLeads,
+      pushedLeads,
+      disqualifiedLeads,
+      agentPerformance,
+      verdictDistribution,
+      dailyTrend
+    ] = await Promise.all([
+      // 1. KPI Counts
+      Lead.countDocuments(baseQuery),
+      Lead.countDocuments({ ...baseQuery, status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] } }),
+      Lead.countDocuments({ ...baseQuery, status: 'PUSHED_TO_CRM' }),
+      Lead.countDocuments({ ...baseQuery, verdict: 'Not Qualified' }),
 
-    // 2. Fetch Agent Performance Leaderboard
-    const agentPerformance = await Lead.aggregate([
-      {
-        $match: {
-          addedBy: { $ne: null, $exists: true }, // Only include leads added by agents
-          ...baseQuery
-        }
-      },
-      {
-        $group: {
-          _id: '$addedBy',
-          totalAdded: { $sum: 1 },
-          analyzedCount: {
-            $sum: { $cond: [{ $in: ['$status', ['ANALYZED', 'PUSHED_TO_CRM']] }, 1, 0] }
-          },
-          pushedCount: {
-            $sum: { $cond: [{ $eq: ['$status', 'PUSHED_TO_CRM'] }, 1, 0] }
-          },
-          avgScore: {
-            $avg: { $cond: [{ $gt: ['$score', 0] }, '$score', null] } // Avg score only for analyzed
-          },
-          goodToGoCount: {
-            $sum: { $cond: [{ $eq: ['$verdict', 'Good to Go (SQL)'] }, 1, 0] }
-          },
-          borderlineCount: {
-            $sum: { $cond: [{ $eq: ['$verdict', 'Borderline'] }, 1, 0] }
-          },
-          notQualifiedCount: {
-            $sum: { $cond: [{ $eq: ['$verdict', 'Not Qualified'] }, 1, 0] }
+      // 2. Agent Performance Leaderboard
+      Lead.aggregate([
+        {
+          $match: {
+            addedBy: { $ne: null, $exists: true },
+            ...baseQuery
+          }
+        },
+        {
+          $group: {
+            _id: '$addedBy',
+            totalAdded: { $sum: 1 },
+            analyzedCount: {
+              $sum: { $cond: [{ $in: ['$status', ['ANALYZED', 'PUSHED_TO_CRM']] }, 1, 0] }
+            },
+            pushedCount: {
+              $sum: { $cond: [{ $eq: ['$status', 'PUSHED_TO_CRM'] }, 1, 0] }
+            },
+            avgScore: {
+              $avg: { $cond: [{ $gt: ['$score', 0] }, '$score', null] }
+            },
+            goodToGoCount: {
+              $sum: { $cond: [{ $eq: ['$verdict', 'Good to Go (SQL)'] }, 1, 0] }
+            },
+            borderlineCount: {
+              $sum: { $cond: [{ $eq: ['$verdict', 'Borderline'] }, 1, 0] }
+            },
+            notQualifiedCount: {
+              $sum: { $cond: [{ $eq: ['$verdict', 'Not Qualified'] }, 1, 0] }
+            }
+          }
+        },
+        {
+          $project: {
+            agentName: '$_id',
+            totalAdded: 1,
+            analyzedCount: 1,
+            pushedCount: 1,
+            avgScore: { $round: ['$avgScore', 1] },
+            goodToGoCount: 1,
+            borderlineCount: 1,
+            notQualifiedCount: 1,
+            _id: 0
+          }
+        },
+        { $sort: { totalAdded: -1, avgScore: -1 } }
+      ]),
+
+      // 3. Verdict Distribution
+      Lead.aggregate([
+        {
+          $match: { verdict: { $ne: null }, ...baseQuery }
+        },
+        {
+          $group: {
+            _id: '$verdict',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            verdict: '$_id',
+            count: 1,
+            _id: 0
           }
         }
-      },
-      {
-        $project: {
-          agentName: '$_id',
-          totalAdded: 1,
-          analyzedCount: 1,
-          pushedCount: 1,
-          avgScore: { $round: ['$avgScore', 1] },
-          goodToGoCount: 1,
-          borderlineCount: 1,
-          notQualifiedCount: 1,
-          _id: 0
-        }
-      },
-      { $sort: { totalAdded: -1, avgScore: -1 } } // Sort by volume, then quality
-    ]);
+      ]),
 
-    // 3. Verdict Distribution
-    const verdictDistribution = await Lead.aggregate([
-      {
-        $match: { verdict: { $ne: null }, ...baseQuery }
-      },
-      {
-        $group: {
-          _id: '$verdict',
-          count: { $sum: 1 }
+      // 4. Daily Trend
+      Lead.aggregate([
+        {
+          $match: baseQuery
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            analyzed: { $sum: { $cond: [{ $in: ['$status', ['ANALYZED', 'PUSHED_TO_CRM']] }, 1, 0] } },
+            pushed: { $sum: { $cond: [{ $eq: ['$status', 'PUSHED_TO_CRM'] }, 1, 0] } },
+          }
+        },
+        { $sort: { _id: 1 } },
+        {
+          $project: {
+            date: '$_id',
+            analyzed: 1,
+            pushed: 1,
+            _id: 0
+          }
         }
-      },
-      {
-        $project: {
-          verdict: '$_id',
-          count: 1,
-          _id: 0
-        }
-      }
+      ])
     ]);
 
     // Format Verdicts for easier frontend usage
     const formattedVerdicts = {
-      sql: verdictDistribution.find(v => v.verdict === 'Good to Go (SQL)')?.count || 0,
-      borderline: verdictDistribution.find(v => v.verdict === 'Borderline')?.count || 0,
-      notQualified: verdictDistribution.find(v => v.verdict === 'Not Qualified')?.count || 0,
+      sql: verdictDistribution.find((v: any) => v.verdict === 'Good to Go (SQL)')?.count || 0,
+      borderline: verdictDistribution.find((v: any) => v.verdict === 'Borderline')?.count || 0,
+      notQualified: verdictDistribution.find((v: any) => v.verdict === 'Not Qualified')?.count || 0,
     };
 
-    // 4. Period Stats (Dynamic)
-    // If a range is provided, show stats for that period. 
-    // Otherwise, default to Today (EST).
+    // Period stats: use the already-fetched values when a date range is specified
     let pushedToday, analyzedToday;
     
     if (start || end) {
@@ -130,41 +160,20 @@ export async function GET(req: Request) {
         day: '2-digit'
       });
       
-      pushedToday = await Lead.countDocuments({
-        status: 'PUSHED_TO_CRM',
-        createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
-      });
-
-      analyzedToday = await Lead.countDocuments({
-        status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
-        createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
-      });
+      // Run remaining "today" queries in parallel too
+      [pushedToday, analyzedToday] = await Promise.all([
+        Lead.countDocuments({
+          status: 'PUSHED_TO_CRM',
+          createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+        }),
+        Lead.countDocuments({
+          status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
+          createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+        })
+      ]);
     }
 
-    // 5. Daily Trend (Last 30 days or selected period)
-    const dailyTrend = await Lead.aggregate([
-      {
-        $match: baseQuery
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          analyzed: { $sum: { $cond: [{ $in: ['$status', ['ANALYZED', 'PUSHED_TO_CRM']] }, 1, 0] } },
-          pushed: { $sum: { $cond: [{ $eq: ['$status', 'PUSHED_TO_CRM'] }, 1, 0] } },
-        }
-      },
-      { $sort: { _id: 1 } },
-      {
-        $project: {
-          date: '$_id',
-          analyzed: 1,
-          pushed: 1,
-          _id: 0
-        }
-      }
-    ]);
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       kpis: {
         totalLeads,
         analyzedLeads,
@@ -177,6 +186,10 @@ export async function GET(req: Request) {
       verdicts: formattedVerdicts,
       dailyTrend,
     });
+
+    // Cache analytics for 10s, serve stale for 30s while revalidating
+    response.headers.set('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+    return response;
   } catch (error) {
     console.error('Failed to fetch analytics:', error);
     return NextResponse.json({ error: 'Failed to fetch analytics data' }, { status: 500 });

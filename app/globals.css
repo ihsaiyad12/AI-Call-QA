@@ -215,3 +215,25 @@ input:focus, textarea:focus {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* Performance: CSS-based table row hover (replaces JS framer-motion whileHover) */
+.lead-table-row {
+  transition: background-color 0.15s ease;
+}
+
+.lead-table-row:hover {
+  background-color: var(--color-bg-hover);
+}
+
+/* Performance: CSS-based button hover (replaces framer-motion whileHover/whileTap) */
+.analyze-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.analyze-btn:hover {
+  transform: scale(1.02);
+}
+
+.analyze-btn:active {
+  transform: scale(0.98);
+}

@@ -3,17 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, Database, CheckCircle2, CloudUpload, XCircle, 
+import {
+  Users, Database, CheckCircle2, CloudUpload, XCircle,
   Trophy, BarChart3, TrendingUp, AlertCircle, RefreshCcw,
   Calendar, Download, ArrowUpRight, ArrowDownRight, Target, ChevronDown
 } from 'lucide-react';
 import CustomDateRangePicker from './CustomDateRangePicker';
-import { 
-  PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, 
+import {
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area
 } from 'recharts';
-import ExcelJS from 'exceljs';
+// ExcelJS is dynamically imported on export click to avoid ~1.3MB in initial bundle
 import { AnalyticsSkeleton } from './Skeleton';
 
 interface AnalyticsData {
@@ -86,7 +86,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
   const fetchAnalytics = async (silent = false) => {
     if (!silent) setIsLoading(true);
-    
+
     setError(null);
     try {
       const response = await axios.get(`/api/analytics?startDate=${startDate}&endDate=${endDate}`);
@@ -131,8 +131,8 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
   if (!data) return null;
 
   const totalVerdicts = data.verdicts.sql + data.verdicts.borderline + data.verdicts.notQualified;
-  const conversionRate = data.kpis.analyzedLeads > 0 
-    ? Math.round((data.verdicts.sql / data.kpis.analyzedLeads) * 100) 
+  const conversionRate = data.kpis.analyzedLeads > 0
+    ? Math.round(((data.verdicts.sql + data.verdicts.borderline) / data.kpis.analyzedLeads) * 100)
     : 0;
 
   // Clean, professional color palette
@@ -147,9 +147,10 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
     'Total Leads': agent.totalAdded,
     'Pushed to CRM': agent.pushedCount,
   }));
-  
+
   const downloadExcel = async () => {
     try {
+      const ExcelJS = (await import('exceljs')).default;
       const res = await fetch(`/api/leads?startDate=${startDate}&endDate=${endDate}`);
       if (!res.ok) throw new Error('Failed to fetch leads for export');
       const leads = await res.json();
@@ -224,7 +225,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
   };
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -236,7 +237,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
           <h1 style={styles.pageTitle}>Analytics Overview</h1>
         </div>
         <div style={styles.headerActions}>
-          <CustomDateRangePicker 
+          <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}
             onRangeChange={handleRangeChange}
@@ -250,10 +251,10 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
       </div>
 
       {/* --- KPI CARDS ROW --- */}
-      <motion.div 
+      <motion.div
         layout
-        style={{ 
-          ...styles.kpiGrid, 
+        style={{
+          ...styles.kpiGrid,
           gridTemplateColumns: isCollapsed ? 'repeat(6, 1fr)' : 'repeat(3, 1fr)',
         }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
@@ -325,7 +326,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
       {/* --- MAIN CONTENT GRID --- */}
       <div style={styles.mainGrid}>
-        
+
         {/* Main Chart: Volume & Performance Trends */}
         <motion.div variants={itemVariants} style={{ ...styles.sectionCard, gridColumn: 'span 3' }}>
           <div style={styles.sectionHeader}>
@@ -340,36 +341,36 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                 <AreaChart data={data.dailyTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorAnalyzed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorPushed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-green)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="var(--color-green)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-green)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--color-green)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-bg-hover)" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }} 
-                    dy={10} 
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }}
+                    dy={10}
                     tickFormatter={(str) => {
                       const d = new Date(str);
                       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     }}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }}
                     allowDecimals={false}
                   />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      borderRadius: '12px', 
-                      border: '1px solid var(--color-border)', 
+                  <RechartsTooltip
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: '1px solid var(--color-border)',
                       boxShadow: '0 8px 30px var(--color-shadow)',
                       padding: '12px 16px',
                       fontSize: '13px',
@@ -378,25 +379,25 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                     labelStyle={{ fontWeight: '700', color: 'var(--color-text-main)', marginBottom: '8px' }}
                     itemStyle={{ padding: '2px 0' }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="analyzed" 
+                  <Area
+                    type="monotone"
+                    dataKey="analyzed"
                     name="Analyzed Leads"
-                    stroke="var(--color-primary)" 
+                    stroke="var(--color-primary)"
                     strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorAnalyzed)" 
-                    animationDuration={2000}
+                    fillOpacity={1}
+                    fill="url(#colorAnalyzed)"
+                    animationDuration={800}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="pushed" 
+                  <Area
+                    type="monotone"
+                    dataKey="pushed"
                     name="Pushed to CRM"
-                    stroke="var(--color-green)" 
+                    stroke="var(--color-green)"
                     strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorPushed)" 
-                    animationDuration={2000}
+                    fillOpacity={1}
+                    fill="url(#colorPushed)"
+                    animationDuration={800}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -416,30 +417,30 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
               <>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie 
-                      data={pieData} 
-                      innerRadius={70} 
-                      outerRadius={95} 
-                      paddingAngle={2} 
-                      dataKey="value" 
+                    <Pie
+                      data={pieData}
+                      innerRadius={70}
+                      outerRadius={95}
+                      paddingAngle={2}
+                      dataKey="value"
                       stroke="none"
                       cornerRadius={4}
                       animationBegin={0}
-                      animationDuration={1500}
+                      animationDuration={800}
                       animationEasing="ease-out"
                     >
                       {pieData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
                     </Pie>
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        borderRadius: '12px', 
-                        border: '1px solid var(--color-border)', 
+                    <RechartsTooltip
+                      contentStyle={{
+                        borderRadius: '12px',
+                        border: '1px solid var(--color-border)',
                         boxShadow: '0 8px 30px var(--color-shadow)',
                         backgroundColor: 'var(--color-bg-card)',
                         padding: '10px 16px',
                         fontSize: '13px',
                         fontWeight: '500'
-                      }} 
+                      }}
                       formatter={(value: any, name: any) => [`${value} leads (${Math.round((value / totalVerdicts) * 100)}%)`, name]}
                     />
                   </PieChart>
@@ -468,7 +469,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                   <span style={{ fontSize: '14px', color: 'var(--color-text-muted)', fontWeight: '500' }}>{item.name}</span>
                 </div>
                 <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-text-main)' }}>
-                  {item.value} <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: '400' }}>({Math.round((item.value/totalVerdicts)*100)}%)</span>
+                  {item.value} <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: '400' }}>({Math.round((item.value / totalVerdicts) * 100)}%)</span>
                 </span>
               </div>
             ))}
@@ -488,24 +489,24 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={agentChartData.slice(0, 8)} margin={{ top: 10, right: 10, left: -10, bottom: 5 }} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-bg-hover)" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }} 
-                    dy={10} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }}
+                    dy={10}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--color-text-muted)', fontWeight: 500 }}
                     allowDecimals={false}
                   />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     cursor={{ fill: 'var(--color-bg-hover)', radius: 4 }}
-                    contentStyle={{ 
-                      borderRadius: '12px', 
-                      border: '1px solid var(--color-border)', 
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: '1px solid var(--color-border)',
                       boxShadow: '0 10px 40px var(--color-shadow)',
                       padding: '12px 16px',
                       fontSize: '13px',
@@ -513,19 +514,19 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                     }}
                     labelStyle={{ fontWeight: '700', color: 'var(--color-text-main)', marginBottom: '8px' }}
                   />
-                  <Bar 
-                    dataKey="Total Leads" 
-                    fill="var(--color-border-hover)" 
-                    radius={[6, 6, 0, 0]} 
+                  <Bar
+                    dataKey="Total Leads"
+                    fill="var(--color-border-hover)"
+                    radius={[6, 6, 0, 0]}
                     maxBarSize={40}
-                    animationDuration={1500}
+                    animationDuration={800}
                   />
-                  <Bar 
-                    dataKey="Pushed to CRM" 
-                    fill="var(--color-primary)" 
-                    radius={[6, 6, 0, 0]} 
+                  <Bar
+                    dataKey="Pushed to CRM"
+                    fill="var(--color-primary)"
+                    radius={[6, 6, 0, 0]}
                     maxBarSize={40}
-                    animationDuration={1500}
+                    animationDuration={800}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -539,7 +540,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
             <h3 style={styles.sectionTitle}>Agent Performance Matrix</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
               <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Sort by</span>
-              <div 
+              <div
                 onClick={() => setIsSortOpen(!isSortOpen)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -559,7 +560,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                   <ChevronDown size={16} color="var(--color-primary)" />
                 </div>
               </div>
-              
+
               {isSortOpen && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '200px',
@@ -574,7 +575,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                     { val: 'avgScoreAsc', label: 'Lowest Avg Score' },
                     { val: 'totalAdded', label: 'Most Total Added' },
                   ].map((opt) => (
-                    <div 
+                    <div
                       key={opt.val}
                       onClick={() => { setAgentSort(opt.val as any); setIsSortOpen(false); setCurrentPage(1); }}
                       style={{
@@ -617,63 +618,63 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                   [...data.agentPerformance]
                     .sort((a, b) => {
                       switch (agentSort) {
-                        case 'qualified':     return b.goodToGoCount - a.goodToGoCount;
-                        case 'disqualified':  return b.notQualifiedCount - a.notQualifiedCount;
-                        case 'avgScoreDesc':  return (b.avgScore ?? 0) - (a.avgScore ?? 0);
-                        case 'avgScoreAsc':   return (a.avgScore ?? 0) - (b.avgScore ?? 0);
-                        case 'totalAdded':    return b.totalAdded - a.totalAdded;
-                        default:              return 0;
+                        case 'qualified': return b.goodToGoCount - a.goodToGoCount;
+                        case 'disqualified': return b.notQualifiedCount - a.notQualifiedCount;
+                        case 'avgScoreDesc': return (b.avgScore ?? 0) - (a.avgScore ?? 0);
+                        case 'avgScoreAsc': return (a.avgScore ?? 0) - (b.avgScore ?? 0);
+                        case 'totalAdded': return b.totalAdded - a.totalAdded;
+                        default: return 0;
                       }
                     })
                     .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
                     .map((agent, i) => (
-                    <motion.tr 
-                      key={i} 
-                      style={styles.tr}
-                      whileHover={{ backgroundColor: 'var(--color-bg-hover)' }}
-                    >
-                      <td style={styles.td}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <div style={styles.avatar}>
-                            {agent.agentName ? agent.agentName.charAt(0).toUpperCase() : '?'}
-                          </div>
-                          <span style={{ fontWeight: '600', color: 'var(--color-text-main)', fontSize: '13px' }}>
-                            {agent.agentName || 'Unknown'}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>{agent.totalAdded}</td>
-                      <td style={styles.td}>{agent.analyzedCount}</td>
-                      <td style={styles.td}>
-                        {agent.avgScore !== null ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontWeight: '600', fontSize: '13px' }}>{agent.avgScore.toFixed(1)}</span>
-                            <div style={styles.scoreBarBg}>
-                              <div style={{ 
-                                ...styles.scoreBarFill, 
-                                width: `${agent.avgScore}%`, 
-                                backgroundColor: agent.avgScore >= 70 ? 'var(--color-primary)' : agent.avgScore >= 50 ? 'var(--color-text-muted)' : '#cbd5e1'
-                              }} />
+                      <motion.tr
+                        key={i}
+                        style={styles.tr}
+                        whileHover={{ backgroundColor: 'var(--color-bg-hover)' }}
+                      >
+                        <td style={styles.td}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={styles.avatar}>
+                              {agent.agentName ? agent.agentName.charAt(0).toUpperCase() : '?'}
                             </div>
+                            <span style={{ fontWeight: '600', color: 'var(--color-text-main)', fontSize: '13px' }}>
+                              {agent.agentName || 'Unknown'}
+                            </span>
                           </div>
-                        ) : (
-                          <span style={{ color: '#cbd5e1' }}>—</span>
-                        )}
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{ ...styles.simpleNumber, color: agent.notQualifiedCount > 0 ? 'var(--color-red)' : 'var(--color-text-muted)', fontWeight: agent.notQualifiedCount > 0 ? '600' : '500' }}>{agent.notQualifiedCount}</span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{ ...styles.simpleNumber, color: agent.borderlineCount > 0 ? 'var(--color-amber)' : 'var(--color-text-muted)', fontWeight: agent.borderlineCount > 0 ? '600' : '500' }}>{agent.borderlineCount}</span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{ ...styles.simpleNumber, color: agent.goodToGoCount > 0 ? 'var(--color-green)' : 'var(--color-text-muted)', fontWeight: agent.goodToGoCount > 0 ? '600' : '500' }}>{agent.goodToGoCount}</span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{...styles.simpleNumber, color: 'var(--color-primary)', fontWeight: '600'}}>{agent.pushedCount}</span>
-                      </td>
-                    </motion.tr>
-                  ))
+                        </td>
+                        <td style={styles.td}>{agent.totalAdded}</td>
+                        <td style={styles.td}>{agent.analyzedCount}</td>
+                        <td style={styles.td}>
+                          {agent.avgScore !== null ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ fontWeight: '600', fontSize: '13px' }}>{agent.avgScore.toFixed(1)}</span>
+                              <div style={styles.scoreBarBg}>
+                                <div style={{
+                                  ...styles.scoreBarFill,
+                                  width: `${agent.avgScore}%`,
+                                  backgroundColor: agent.avgScore >= 70 ? 'var(--color-primary)' : agent.avgScore >= 50 ? 'var(--color-text-muted)' : '#cbd5e1'
+                                }} />
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#cbd5e1' }}>—</span>
+                          )}
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{ ...styles.simpleNumber, color: agent.notQualifiedCount > 0 ? 'var(--color-red)' : 'var(--color-text-muted)', fontWeight: agent.notQualifiedCount > 0 ? '600' : '500' }}>{agent.notQualifiedCount}</span>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{ ...styles.simpleNumber, color: agent.borderlineCount > 0 ? 'var(--color-amber)' : 'var(--color-text-muted)', fontWeight: agent.borderlineCount > 0 ? '600' : '500' }}>{agent.borderlineCount}</span>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{ ...styles.simpleNumber, color: agent.goodToGoCount > 0 ? 'var(--color-green)' : 'var(--color-text-muted)', fontWeight: agent.goodToGoCount > 0 ? '600' : '500' }}>{agent.goodToGoCount}</span>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{ ...styles.simpleNumber, color: 'var(--color-primary)', fontWeight: '600' }}>{agent.pushedCount}</span>
+                        </td>
+                      </motion.tr>
+                    ))
                 )}
               </tbody>
             </table>
@@ -683,8 +684,8 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                   Showing {(currentPage - 1) * rowsPerPage + 1} to {Math.min(currentPage * rowsPerPage, data.agentPerformance.length)} of {data.agentPerformance.length} agents
                 </span>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     style={{
                       padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--color-border)',
@@ -696,8 +697,8 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
                   >
                     Previous
                   </button>
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(data.agentPerformance.length / rowsPerPage), p + 1))} 
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(data.agentPerformance.length / rowsPerPage), p + 1))}
                     disabled={currentPage === Math.ceil(data.agentPerformance.length / rowsPerPage)}
                     style={{
                       padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--color-border)',
@@ -732,7 +733,7 @@ const styles: Record<string, React.CSSProperties> = {
   loadingSpinner: {
     width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%'
   },
-  
+
   // --- PAGE HEADER ---
   pageHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px'
@@ -758,7 +759,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: '500'
   },
   dateInput: {
-    border: 'none', backgroundColor: 'transparent', 
+    border: 'none', backgroundColor: 'transparent',
     padding: '0 4px', fontSize: '14px', fontWeight: '600', color: 'var(--color-text-main)',
     outline: 'none', cursor: 'pointer', fontFamily: 'inherit'
   },
@@ -776,8 +777,8 @@ const styles: Record<string, React.CSSProperties> = {
 
   // --- KPI CARDS ---
   kpiGrid: {
-    display: 'grid', 
-    gap: '16px', 
+    display: 'grid',
+    gap: '16px',
     marginBottom: '24px'
   },
   kpiCard: {
@@ -835,7 +836,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '950px'
   },
   th: {
-    padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--color-text-muted)', 
+    padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--color-text-muted)',
     borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-sidebar)', textTransform: 'uppercase', letterSpacing: '0.05em'
   },
   tr: {

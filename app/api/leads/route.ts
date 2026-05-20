@@ -69,18 +69,10 @@ export async function GET(req: Request) {
     }
 
     // If no query, return all leads (prioritized by PENDING)
-    const allLeads = await db.lead.findMany(filter);
-    // Sort logic in db.lead.findMany is by newest first, 
-    // let's ensure PENDING are at the top here or in DB layer.
-    // Actually, db.lead.findMany already sorts by createdAt.
-    // Let's refine the sorting to PENDING first.
-    const sortedLeads = [...allLeads].sort((a: any, b: any) => {
-      if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
-      if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // Sort in MongoDB: PENDING first (alphabetical), then newest
+    const allLeads = await db.lead.findMany(filter, { status: 1, createdAt: -1 });
 
-    return NextResponse.json(sortedLeads);
+    return NextResponse.json(allLeads);
   } catch (error: any) {
     console.error('Lead Search/Fetch Error:', error);
     return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });

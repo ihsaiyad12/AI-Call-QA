@@ -68,6 +68,12 @@ LeadSchema.index({ email: 1 });
 LeadSchema.index({ phone: 1 });
 LeadSchema.index({ firstName: 'text', lastName: 'text', email: 'text' });
 
+// Performance indexes for dashboard & analytics queries
+LeadSchema.index({ createdAt: -1 });                    // Default sort order
+LeadSchema.index({ status: 1, createdAt: -1 });         // Status filter + date sort (Leads dashboard)
+LeadSchema.index({ addedBy: 1, createdAt: -1 });        // Agent performance aggregation
+LeadSchema.index({ verdict: 1 });                       // Verdict distribution queries
+
 // For Next.js hot reloading: Prevents re-defining the model if it exists
 const Lead: Model<ILead> = mongoose.models.Lead || mongoose.model<ILead>('Lead', LeadSchema);
 

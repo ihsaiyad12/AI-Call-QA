@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, PlayCircle, CheckCircle2, AlertCircle, Clock, Database, Download, RefreshCcw, MoreHorizontal, ChevronRight, Calendar, ChevronDown, Filter, TrendingUp } from 'lucide-react';
 import { LeadRecord } from '@/types';
-import ExcelJS from 'exceljs';
+// ExcelJS is dynamically imported on export click to avoid ~1.3MB in initial bundle
 import CustomDateRangePicker from './CustomDateRangePicker';
 import { DashboardSkeleton } from './Skeleton';
 
@@ -67,6 +67,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const downloadExcel = async () => {
+    const ExcelJS = (await import('exceljs')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Leads Analysis');
 
@@ -185,57 +186,63 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
 
   // Real-time instant sync via Server-Sent Events (SSE) - Zero-delay updates
   useEffect(() => {
-    const eventSource = new EventSource('/api/leads/stream');
+    let eventSource: EventSource | null = null;
+    let reconnectDelay = 1000; // Start at 1s, exponential backoff on failures
+    let reconnectTimer: NodeJS.Timeout | null = null;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const newLead = JSON.parse(event.data);
-        setLeads((prev) => {
-          // Prevent duplicates
-          if (prev.some((l) => l.id === newLead.id)) return prev;
-          // Prepend the new lead so it shows at the top instantly
-          return [newLead, ...prev];
-        });
-      } catch (err) {
-        console.error('Failed to parse SSE new-lead:', err);
-      }
+    const connect = () => {
+      eventSource = new EventSource('/api/leads/stream');
+
+      eventSource.onopen = () => {
+        reconnectDelay = 1000; // Reset backoff on successful connection
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const newLead = JSON.parse(event.data);
+          setLeads((prev) => {
+            if (prev.some((l) => l.id === newLead.id)) return prev;
+            return [newLead, ...prev];
+          });
+        } catch (err) {
+          console.error('Failed to parse SSE new-lead:', err);
+        }
+      };
+
+      eventSource.addEventListener('update-lead', (event: MessageEvent) => {
+        try {
+          const updatedLead = JSON.parse(event.data);
+          setLeads((prev) => {
+            if (updatedLead.deleted) {
+              return prev.filter((l) => l.id !== updatedLead.id);
+            }
+            if (!prev.some((l) => l.id === updatedLead.id)) {
+              return [updatedLead, ...prev];
+            }
+            return prev.map((l) => (l.id === updatedLead.id ? updatedLead : l));
+          });
+        } catch (err) {
+          console.error('Failed to parse SSE update-lead:', err);
+        }
+      });
+
+      eventSource.onerror = () => {
+        eventSource?.close();
+        // Exponential backoff reconnection (1s, 2s, 4s, 8s... max 30s)
+        reconnectTimer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+          connect();
+        }, reconnectDelay);
+      };
     };
 
-    eventSource.addEventListener('update-lead', (event: MessageEvent) => {
-      try {
-        const updatedLead = JSON.parse(event.data);
-        setLeads((prev) => {
-          if (updatedLead.deleted) {
-            return prev.filter((l) => l.id !== updatedLead.id);
-          }
-          // If the lead doesn't exist in state yet, prepend it
-          if (!prev.some((l) => l.id === updatedLead.id)) {
-            return [updatedLead, ...prev];
-          }
-          return prev.map((l) => (l.id === updatedLead.id ? updatedLead : l));
-        });
-      } catch (err) {
-        console.error('Failed to parse SSE update-lead:', err);
-      }
-    });
-
-    eventSource.onerror = (err) => {
-      console.warn('SSE connection encountered an error. EventSource will auto-reconnect...', err);
-    };
+    connect();
 
     return () => {
-      eventSource.close();
+      eventSource?.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
     };
   }, []);
-
-  // Failsafe polling fallback (runs every 15 seconds silently in case SSE is blocked by proxies)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLeads(true, searchTerm);
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [startDate, endDate, searchTerm]);
 
   // Guard against null/undefined fields, perform instant client-side match, and sort results
   const filteredLeads = leads.filter(lead => {
@@ -492,15 +499,11 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
               </tr>
             </thead>
             <tbody>
-              <AnimatePresence>
-                {filteredLeads.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((lead, i) => (
-                  <motion.tr 
+                {filteredLeads.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((lead) => (
+                  <tr 
                     key={lead.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.02 }}
+                    className="lead-table-row"
                     style={{ ...styles.tr, cursor: lead.status !== 'PENDING' ? 'pointer' : 'default' }}
-                    whileHover={{ backgroundColor: 'var(--color-bg-hover)' }}
                     onClick={() => lead.status !== 'PENDING' && onViewDetails(lead)}
                   >
                     <td style={{ ...styles.td, ...styles.stickyCol1, width: '150px', minWidth: '150px' }}>
@@ -581,14 +584,13 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
                     </td>
                     <td style={{ ...styles.td, textAlign: 'right' }}>
                       {lead.status !== 'PUSHED_TO_CRM' ? (
-                        <motion.button 
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
+                        <button 
                           onClick={(e) => { e.stopPropagation(); onAnalyze(lead); }}
                           style={styles.primaryActionBtn}
+                          className="analyze-btn"
                         >
                           <PlayCircle size={14} /> Analyze
-                        </motion.button>
+                        </button>
                       ) : (
                         <button 
                           style={styles.disabledActionBtn} 
@@ -599,9 +601,8 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
                         </button>
                       )}
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
-              </AnimatePresence>
               {filteredLeads.length === 0 && (
                 <tr>
                   <td colSpan={9} style={{ padding: '80px 20px', textAlign: 'center' }}>

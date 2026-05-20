@@ -130,7 +130,6 @@ export default function Home() {
       }
 
       // 2. Transition to scoring
-      await new Promise(resolve => setTimeout(resolve, 800));
       if (signal.aborted) return;
 
       setProcessingState({ type: 'scoring', progress: 20, error: null });
@@ -146,7 +145,6 @@ export default function Home() {
       setProcessingState({ type: 'scoring', progress: 100, error: null });
 
       // 3. Save to Database
-      await new Promise(resolve => setTimeout(resolve, 800));
       if (signal.aborted) return;
 
       setProcessingState({ type: 'saving', progress: 100, error: null });
