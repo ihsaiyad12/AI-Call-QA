@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const start = parseDateParam(startDateParam);
     const end = parseDateParam(endDateParam);
     
-    const baseQuery: any = {};
+    const baseQuery: any = { isDeleted: { $ne: true } };
     if (start || end) {
       baseQuery.createdAt = {};
       if (start) {
@@ -164,11 +164,13 @@ export async function GET(req: Request) {
       [pushedToday, analyzedToday] = await Promise.all([
         Lead.countDocuments({
           status: 'PUSHED_TO_CRM',
-          createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+          createdAtEST: { $regex: new RegExp(`^${todayEST}`) },
+          isDeleted: { $ne: true }
         }),
         Lead.countDocuments({
           status: { $in: ['ANALYZED', 'PUSHED_TO_CRM'] },
-          createdAtEST: { $regex: new RegExp(`^${todayEST}`) }
+          createdAtEST: { $regex: new RegExp(`^${todayEST}`) },
+          isDeleted: { $ne: true }
         })
       ]);
     }

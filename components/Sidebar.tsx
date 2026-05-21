@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mic2, User, ChevronLeft, ChevronRight, PieChart, Database, LogOut, Sun, Moon } from 'lucide-react';
+import { Mic2, User, ChevronLeft, ChevronRight, PieChart, Database, LogOut, Sun, Moon, Users } from 'lucide-react';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
 
 interface SidebarProps {
-  activeView: 'analytics' | 'dashboard' | 'analyzer';
-  onViewChange: (view: 'analytics' | 'dashboard' | 'analyzer') => void;
+  activeView: 'analytics' | 'dashboard' | 'analyzer' | 'users';
+  onViewChange: (view: 'analytics' | 'dashboard' | 'analyzer' | 'users') => void;
   userName?: string | null;
+  role?: string | null;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
-export default function Sidebar({ activeView, onViewChange, userName, isCollapsed, setIsCollapsed }: SidebarProps) {
+export default function Sidebar({ activeView, onViewChange, userName, role, isCollapsed, setIsCollapsed }: SidebarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
@@ -34,6 +35,10 @@ export default function Sidebar({ activeView, onViewChange, userName, isCollapse
     { id: 'analytics', label: 'Analytics', icon: <PieChart size={20} /> },
     { id: 'dashboard', label: 'Leads Database', icon: <Database size={20} /> },
   ];
+
+  if (role === 'super-admin') {
+    mainItems.push({ id: 'users', label: 'User Management', icon: <Users size={20} /> });
+  }
 
   const toolItems = [
     { id: 'analyzer', label: 'Call Analyzer', icon: <Mic2 size={20} /> },
@@ -146,7 +151,9 @@ export default function Sidebar({ activeView, onViewChange, userName, isCollapse
           {!isCollapsed && (
             <div style={styles.userInfo}>
               <div style={styles.userName}>{userName || 'Analyst'}</div>
-              <div style={styles.userRole}>Quality Analyst</div>
+              <div style={styles.userRole}>
+                {role === 'super-admin' ? 'Super Admin' : (role === 'agent' ? 'Call Agent' : 'Quality Analyst')}
+              </div>
             </div>
           )}
         </div>

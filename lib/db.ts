@@ -104,18 +104,19 @@ export const db = {
 
     async findOne(filter: any) {
       await dbConnect();
-      const lead = await Lead.findOne(filter).lean();
+      const queryFilter = { ...filter, isDeleted: { $ne: true } };
+      const lead = await Lead.findOne(queryFilter).lean();
       if (!lead) return null;
       return { ...lead, id: (lead as any)._id.toString() };
     },
 
     /**
-     * Delete a lead by its ID
+     * Delete a lead by its ID (Migrated to soft-delete)
      */
     async delete(id: string) {
       await dbConnect();
       try {
-        const lead = await Lead.findByIdAndDelete(id);
+        const lead = await Lead.findByIdAndUpdate(id, { isDeleted: true }, { returnDocument: 'after' });
         if (!lead) return null;
         const obj = lead.toObject();
         return { ...obj, id: obj._id.toString() };
@@ -129,7 +130,8 @@ export const db = {
      */
     async findMany(filter: any = {}, sort: any = { createdAt: -1 }) {
       await dbConnect();
-      const leads = await Lead.find(filter).sort(sort).lean();
+      const queryFilter = { ...filter, isDeleted: { $ne: true } };
+      const leads = await Lead.find(queryFilter).sort(sort).lean();
       return leads.map((l: any) => ({ ...l, id: l._id.toString() }));
     },
 
@@ -149,6 +151,7 @@ export const db = {
           { lastName: regex },
           { phone: regex },
         ],
+        isDeleted: { $ne: true },
         ...filter
       })
       .sort({ status: 1, createdAt: -1 }) // PENDING first, then newest

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, PlayCircle, CheckCircle2, AlertCircle, Clock, Database, Download, RefreshCcw, MoreHorizontal, ChevronRight, Calendar, ChevronDown, Filter, TrendingUp } from 'lucide-react';
+import { Search, Loader2, PlayCircle, CheckCircle2, AlertCircle, Clock, Database, Download, RefreshCcw, MoreHorizontal, ChevronRight, Calendar, ChevronDown, Filter, TrendingUp, Trash2 } from 'lucide-react';
 import { LeadRecord } from '@/types';
+import { useSession } from 'next-auth/react';
 // ExcelJS is dynamically imported on export click to avoid ~1.3MB in initial bundle
 import CustomDateRangePicker from './CustomDateRangePicker';
 import { DashboardSkeleton } from './Skeleton';
@@ -15,6 +16,8 @@ interface LeadDashboardProps {
 }
 
 export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger = 0 }: LeadDashboardProps) {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +26,29 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
   const [scoreSort, setScoreSort] = useState<'NONE' | 'ASC' | 'DESC'>('NONE');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [todayStats, setTodayStats] = useState({ analyzed: 0, pushed: 0, pending: 0 });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteLead = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete lead "${name}"? This action will hide it from the application but preserve it securely in the database.`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/leads/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete lead');
+      }
+      // SSE will handle real-time sync, but let's also remove it locally immediately for responsive feedback
+      setLeads(prev => prev.filter(l => l.id !== id));
+    } catch (err: any) {
+      alert(`Error deleting lead: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     const analyzedCount = leads.filter(l => l.status === 'ANALYZED' || l.status === 'PUSHED_TO_CRM').length;
@@ -589,24 +615,49 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
                         </div>
                       )}
                     </td>
-                    <td style={{ ...styles.td, textAlign: 'right' }}>
-                      {lead.status !== 'PUSHED_TO_CRM' ? (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onAnalyze(lead); }}
-                          style={styles.primaryActionBtn}
-                          className="analyze-btn"
-                        >
-                          <PlayCircle size={14} /> Analyze
-                        </button>
-                      ) : (
-                        <button 
-                          style={styles.disabledActionBtn} 
-                          disabled
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Database size={14} /> Synced
-                        </button>
-                      )}
+                    <td style={{ ...styles.td, textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+                        {lead.status !== 'PUSHED_TO_CRM' ? (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onAnalyze(lead); }}
+                            style={styles.primaryActionBtn}
+                            className="analyze-btn"
+                          >
+                            <PlayCircle size={14} /> Analyze
+                          </button>
+                        ) : (
+                          <button 
+                            style={styles.disabledActionBtn} 
+                            disabled
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Database size={14} /> Synced
+                          </button>
+                        )}
+
+                        {userRole === 'super-admin' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLead(lead.id, `${lead.firstName} ${lead.lastName}`);
+                            }}
+                            disabled={deletingId === lead.id}
+                            style={{
+                              ...styles.trashBtn,
+                              opacity: deletingId === lead.id ? 0.5 : 1,
+                              cursor: deletingId === lead.id ? 'not-allowed' : 'pointer'
+                            }}
+                            className="trash-btn"
+                            title="Delete Lead"
+                          >
+                            {deletingId === lead.id ? (
+                              <Loader2 size={14} className="spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -994,6 +1045,19 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center', 
     padding: '100px 20px',
     minHeight: '60vh'
+  },
+  trashBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    color: 'rgb(239, 68, 68)',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
 };
 

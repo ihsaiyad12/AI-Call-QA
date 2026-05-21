@@ -10,6 +10,7 @@ import Step3_Results from '@/components/Step3_Results';
 import LeadDashboard from '@/components/LeadDashboard';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import Sidebar from '@/components/Sidebar';
+import UserManagement from '@/components/UserManagement';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AIProvider, AnalysisResult, ProcessingState } from '@/types';
@@ -26,7 +27,7 @@ export default function Home() {
     }
   }, [session, status, router]);
 
-  const [activeView, setActiveView] = useState<'analytics' | 'dashboard' | 'analyzer' | 'details'>('analytics');
+  const [activeView, setActiveView] = useState<'analytics' | 'dashboard' | 'analyzer' | 'details' | 'users'>('analytics');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -258,9 +259,10 @@ export default function Home() {
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar 
-        activeView={activeView === 'details' ? 'analyzer' : activeView} 
-        onViewChange={setActiveView} 
+        activeView={activeView === 'details' ? 'analyzer' : (activeView as any)} 
+        onViewChange={setActiveView as any} 
         userName={session?.user?.name}
+        role={(session?.user as any)?.role}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
       />
@@ -357,6 +359,10 @@ export default function Home() {
               refreshTrigger={refreshTrigger}
             />
           </div>
+
+          {activeView === 'users' && (
+            <UserManagement />
+          )}
 
           {activeView === 'details' && (
             <Step3_Results

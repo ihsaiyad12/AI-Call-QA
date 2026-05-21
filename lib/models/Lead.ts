@@ -24,6 +24,7 @@ export interface ILead extends Document {
   emailStatusRaw?: string;
   addedBy?: string;
   aiProvider?: string;
+  isDeleted?: boolean;
   createdAtEST?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +58,7 @@ const LeadSchema: Schema = new Schema({
   emailStatusRaw: { type: String, default: null },
   addedBy: { type: String, default: null },
   aiProvider: { type: String, default: null },
+  isDeleted: { type: Boolean, default: false },
   createdAtEST: { type: String, default: null },
 }, { 
   timestamps: true,
@@ -66,6 +68,7 @@ const LeadSchema: Schema = new Schema({
 // Index for efficient lead search by email, name, and phone
 LeadSchema.index({ email: 1 });
 LeadSchema.index({ phone: 1 });
+LeadSchema.index({ isDeleted: 1 });
 LeadSchema.index({ firstName: 'text', lastName: 'text', email: 'text' });
 
 // Performance indexes for dashboard & analytics queries
