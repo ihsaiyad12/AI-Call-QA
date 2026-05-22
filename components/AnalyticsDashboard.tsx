@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Database, CheckCircle2, CloudUpload, XCircle,
   Trophy, BarChart3, TrendingUp, AlertCircle, RefreshCcw,
-  Calendar, Download, ArrowUpRight, ArrowDownRight, Target, ChevronDown
+  Calendar, Download, ArrowUpRight, ArrowDownRight, Target, ChevronDown, Filter
 } from 'lucide-react';
 import CustomDateRangePicker from './CustomDateRangePicker';
+import { CATEGORIES } from '@/lib/constants';
 import {
   PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area
@@ -47,7 +48,7 @@ interface AnalyticsData {
   }>;
 }
 
-export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 0, isCollapsed = false }: { isVisible?: boolean, refreshTrigger?: number, isCollapsed?: boolean }) {
+export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 0, isCollapsed = false, selectedCategory = null, onCategoryChange }: { isVisible?: boolean, refreshTrigger?: number, isCollapsed?: boolean, selectedCategory?: string | null, onCategoryChange?: (cat: string | null) => void }) {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +56,9 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [dateRangeLabel, setDateRangeLabel] = useState('Custom');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryRef = React.useRef<HTMLDivElement>(null);
   const rowsPerPage = 15;
 
   const getLocalDateString = (d: Date) => {
@@ -89,7 +93,11 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
     setError(null);
     try {
-      const response = await axios.get(`/api/analytics?startDate=${startDate}&endDate=${endDate}`);
+      let url = `/api/analytics?startDate=${startDate}&endDate=${endDate}`;
+      if (selectedCategory) {
+        url += `&category=${encodeURIComponent(selectedCategory)}`;
+      }
+      const response = await axios.get(url);
       setData(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load analytics data.');
@@ -101,13 +109,24 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
 
   useEffect(() => {
     fetchAnalytics();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedCategory]);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
       fetchAnalytics(true);
     }
   }, [refreshTrigger]);
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (isLoading) {
     return (
@@ -237,6 +256,87 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
           <h1 style={styles.pageTitle}>Analytics Overview</h1>
         </div>
         <div style={styles.headerActions}>
+          {/* Category Filter Dropdown */}
+          <div ref={categoryRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => { setIsCategoryOpen(!isCategoryOpen); setCategorySearch(''); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px', height: '48px',
+                backgroundColor: selectedCategory ? 'var(--color-primary-light)' : 'var(--color-bg-card)',
+                border: `1px solid ${selectedCategory ? 'rgba(139, 92, 246, 0.3)' : 'var(--color-border)'}`,
+                borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                color: selectedCategory ? 'var(--color-primary)' : 'var(--color-text-main)',
+                boxShadow: '0 4px 12px var(--color-shadow)', transition: 'all 0.2s', minWidth: '180px',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Filter size={14} color="var(--color-primary)" />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>
+                  {selectedCategory || 'All Categories'}
+                </span>
+              </div>
+              <ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: isCategoryOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </button>
+            
+            {isCategoryOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '280px',
+                backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px',
+                boxShadow: '0 20px 50px var(--color-shadow)', zIndex: 100, overflow: 'hidden'
+              }}>
+                <div style={{ padding: '12px 12px 8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Search categories..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--color-border)',
+                      fontSize: '13px', outline: 'none', backgroundColor: 'var(--color-bg-app)',
+                      color: 'var(--color-text-main)', boxSizing: 'border-box'
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                  <div
+                    onClick={() => { onCategoryChange?.(null); setIsCategoryOpen(false); }}
+                    style={{
+                      padding: '10px 16px', fontSize: '13px', fontWeight: selectedCategory === null ? '700' : '500',
+                      cursor: 'pointer', backgroundColor: selectedCategory === null ? 'var(--color-bg-hover)' : 'transparent',
+                      color: selectedCategory === null ? 'var(--color-primary)' : 'var(--color-text-main)',
+                      borderBottom: '1px solid var(--color-border)'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = selectedCategory === null ? 'var(--color-bg-hover)' : 'transparent'; }}
+                  >
+                    All Categories
+                  </div>
+                  {[...CATEGORIES]
+                    .sort((a, b) => a.localeCompare(b))
+                    .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+                    .map(cat => (
+                    <div
+                      key={cat}
+                      onClick={() => { onCategoryChange?.(cat); setIsCategoryOpen(false); }}
+                      style={{
+                        padding: '10px 16px', fontSize: '13px', fontWeight: selectedCategory === cat ? '700' : '500',
+                        cursor: 'pointer', backgroundColor: selectedCategory === cat ? 'var(--color-bg-hover)' : 'transparent',
+                        color: selectedCategory === cat ? 'var(--color-primary)' : 'var(--color-text-main)'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = selectedCategory === cat ? 'var(--color-bg-hover)' : 'transparent'; }}
+                    >
+                      {cat}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <CustomDateRangePicker
             startDate={startDate}
             endDate={endDate}

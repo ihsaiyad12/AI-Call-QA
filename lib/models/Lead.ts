@@ -8,6 +8,8 @@ export interface ILead extends Document {
   category: string;
   employeeCount: string;
   jobTitle?: string;
+  company?: string | null;
+  industry?: string | null;
   transcript?: string;
   verdict?: 'Good to Go (SQL)' | 'Borderline' | 'Not Qualified' | null;
   score?: number;
@@ -18,6 +20,7 @@ export interface ILead extends Document {
   timeline?: number;
   industry_fit?: number;
   risk_level?: 'Low' | 'Medium' | 'High';
+  icp_category?: string | null;
   status: 'PENDING' | 'ANALYZED' | 'PUSHED_TO_CRM';
   disqualificationComment?: string;
   emailStatus?: string;
@@ -38,6 +41,8 @@ const LeadSchema: Schema = new Schema({
   category: { type: String, required: true },
   employeeCount: { type: String, required: true },
   jobTitle: { type: String },
+  company: { type: String, default: null },
+  industry: { type: String, default: null },
   transcript: { type: String, default: '' },
   verdict: { type: String, enum: ['Good to Go (SQL)', 'Borderline', 'Not Qualified', null], default: null },
   score: { type: Number, default: 0 },
@@ -48,6 +53,7 @@ const LeadSchema: Schema = new Schema({
   timeline: { type: Number },
   industry_fit: { type: Number },
   risk_level: { type: String, enum: ['Low', 'Medium', 'High', null], default: null },
+  icp_category: { type: String, default: null },
   status: { 
     type: String, 
     enum: ['PENDING', 'ANALYZED', 'PUSHED_TO_CRM'], 

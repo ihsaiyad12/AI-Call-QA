@@ -221,6 +221,17 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                 <span style={styles.metaChip}>
                   <Users size={12} color="var(--color-primary)" /> {leadData.employeeCount} employees
                 </span>
+                {leadData.category?.toLowerCase() === 'hr' && analysisResult.icp_category && (
+                  <span style={{ 
+                    ...styles.metaChip, 
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)', 
+                    color: '#10b981', 
+                    borderColor: 'rgba(16, 185, 129, 0.2)',
+                    fontWeight: '700'
+                  }}>
+                    🎯 {analysisResult.icp_category}
+                  </span>
+                )}
                 {leadData.aiProvider && (
                   <span style={{ ...styles.metaChip, background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-primary)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
                     🤖 {leadData.aiProvider}

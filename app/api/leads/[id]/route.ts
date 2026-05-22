@@ -45,7 +45,7 @@ export async function PATCH(
     const { 
       transcript, verdict: rawVerdict, score, reasoning, status, aiProvider,
       intent, authority, demo_commitment, timeline, industry_fit, risk_level,
-      disqualificationComment
+      disqualificationComment, icp_category, company, industry
     } = body;
 
     // Normalize verdict to exact DB enum values
@@ -66,6 +66,9 @@ export async function PATCH(
     if (verdict !== undefined) updateData.verdict = verdict;
     if (reasoning !== undefined) updateData.reasoning = reasoning;
     if (risk_level !== undefined) updateData.risk_level = risk_level;
+    if (icp_category !== undefined) updateData.icp_category = icp_category;
+    if (company !== undefined) updateData.company = company;
+    if (industry !== undefined) updateData.industry = industry;
     if (status !== undefined) updateData.status = status;
     if (aiProvider !== undefined) updateData.aiProvider = aiProvider;
     if (disqualificationComment !== undefined) updateData.disqualificationComment = disqualificationComment;

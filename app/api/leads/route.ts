@@ -50,8 +50,12 @@ export async function GET(req: Request) {
 
     const start = parseDateParam(startDateParam);
     const end = parseDateParam(endDateParam);
+    const category = searchParams.get('category');
     
     const filter: any = {};
+    if (category) {
+      filter.category = category;
+    }
     if (start || end) {
       filter.createdAt = {};
       if (start) {
@@ -101,7 +105,8 @@ export async function POST(req: Request) {
     const { 
       firstName, lastName, email, phone, category, employeeCount, jobTitle, 
       transcript, verdict: rawVerdict, score, reasoning, status, aiProvider, addedBy,
-      intent, authority, demo_commitment, timeline, industry_fit, risk_level
+      intent, authority, demo_commitment, timeline, industry_fit, risk_level,
+      icp_category, company, industry
     } = body;
 
     if (!email) {
@@ -185,8 +190,11 @@ export async function POST(req: Request) {
       category, 
       employeeCount, 
       jobTitle: jobTitle?.trim(), 
+      company: company?.trim() || null,
+      industry: industry?.trim() || null,
       transcript, verdict, score: finalScore, reasoning, 
       intent: nIntent, authority: nAuthority, demo_commitment: nDemo, timeline: nTimeline, industry_fit: nIndustry, risk_level,
+      icp_category,
       status: status || 'ANALYZED',
       aiProvider: finalAiProvider,
       addedBy,

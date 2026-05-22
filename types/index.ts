@@ -10,6 +10,7 @@ export interface AnalysisResult {
   industry_fit?: number;
   reasoning: string;
   risk_level?: 'Low' | 'Medium' | 'High';
+  icp_category?: string | null;
 }
 
 export interface ProcessingState {
@@ -26,6 +27,8 @@ export interface LeadData {
   category: string;
   employeeCount: string;
   jobTitle: string;
+  company?: string | null;
+  industry?: string | null;
 }
 
 export interface LeadRecord extends LeadData {
@@ -40,6 +43,7 @@ export interface LeadRecord extends LeadData {
   timeline?: number;
   industry_fit?: number;
   risk_level?: 'Low' | 'Medium' | 'High';
+  icp_category?: string | null;
   status: 'PENDING' | 'ANALYZED' | 'PUSHED_TO_CRM';
   disqualificationComment?: string;
   emailStatus?: string | null;

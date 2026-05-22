@@ -8,14 +8,23 @@ import { useSession } from 'next-auth/react';
 // ExcelJS is dynamically imported on export click to avoid ~1.3MB in initial bundle
 import CustomDateRangePicker from './CustomDateRangePicker';
 import { DashboardSkeleton } from './Skeleton';
+import { CATEGORIES } from '@/lib/constants';
 
 interface LeadDashboardProps {
   onAnalyze: (lead: LeadRecord) => void;
   onViewDetails: (lead: LeadRecord) => void;
   refreshTrigger?: number;
+  selectedCategory?: string | null;
+  onCategoryChange?: (category: string | null) => void;
 }
 
-export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger = 0 }: LeadDashboardProps) {
+export default function LeadDashboard({ 
+  onAnalyze, 
+  onViewDetails, 
+  refreshTrigger = 0,
+  selectedCategory = null,
+  onCategoryChange
+}: LeadDashboardProps) {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role;
   const [leads, setLeads] = useState<LeadRecord[]>([]);
@@ -27,6 +36,10 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [todayStats, setTodayStats] = useState({ analyzed: 0, pushed: 0, pending: 0 });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   const handleDeleteLead = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete lead "${name}"? This action will hide it from the application but preserve it securely in the database.`)) {
@@ -56,6 +69,17 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     const pendingCount = leads.filter(l => l.status === 'PENDING').length;
     setTodayStats({ analyzed: analyzedCount, pushed: pushedCount, pending: pendingCount });
   }, [leads]);
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isScoreOpen, setIsScoreOpen] = useState(false);
@@ -164,9 +188,15 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     setIsRefreshing(true);
     try {
       let url = `/api/leads?startDate=${startDate}&endDate=${endDate}`;
+      if (selectedCategory) {
+        url += `&category=${encodeURIComponent(selectedCategory)}`;
+      }
       // If there is an active search term of 2 or more characters, query globally to find any historical match
       if (customSearchTerm.trim().length >= 2) {
         url = `/api/leads?q=${encodeURIComponent(customSearchTerm.trim())}`;
+        if (selectedCategory) {
+          url += `&category=${encodeURIComponent(selectedCategory)}`;
+        }
       }
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch leads');
@@ -181,12 +211,12 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     }
   };
 
-  // Fetch leads when date range changes (only if not searching)
+  // Fetch leads when date range or category changes (only if not searching)
   useEffect(() => {
     if (searchTerm.trim().length < 2) {
       fetchLeads();
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedCategory]);
 
   // Debounce search input fetching and reset page to 1
   useEffect(() => {
@@ -201,7 +231,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     } else {
       fetchLeads(true, searchTerm);
     }
-  }, [searchTerm]);
+  }, [searchTerm, selectedCategory]);
 
   // Handle external manual refreshes
   useEffect(() => {
@@ -279,7 +309,8 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
     const searchStr = `${firstName} ${lastName} ${email} ${phone}`.toLowerCase();
     const matchesSearch = searchStr.includes(searchTerm.toLowerCase().trim());
     const matchesStatus = statusFilter === 'ALL' || lead.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCategory = !selectedCategory || lead.category === selectedCategory;
+    return matchesSearch && matchesStatus && matchesCategory;
   }).sort((a, b) => {
     if (scoreSort !== 'NONE') {
       const sA = a.score || 0;
@@ -397,9 +428,97 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
             label={dateRangeLabel}
           />
 
+          {/* Category Filter Dropdown */}
+          <div ref={categoryRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => { setIsCategoryOpen(!isCategoryOpen); setCategorySearch(''); setIsStatusOpen(false); setIsScoreOpen(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px', height: '48px',
+                backgroundColor: selectedCategory ? 'var(--color-primary-light)' : 'var(--color-bg-card)',
+                border: `1px solid ${selectedCategory ? 'rgba(139, 92, 246, 0.3)' : 'var(--color-border)'}`,
+                borderRadius: '12px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                color: selectedCategory ? 'var(--color-primary)' : 'var(--color-text-main)',
+                boxShadow: '0 8px 30px var(--color-shadow)', transition: 'all 0.2s', minWidth: '180px',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Filter size={14} color="var(--color-primary)" />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>
+                  {selectedCategory || 'All Categories'}
+                </span>
+              </div>
+              <ChevronDown size={14} color={selectedCategory ? 'var(--color-primary)' : 'var(--color-text-muted)'} style={{ transition: 'transform 0.2s', transform: isCategoryOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </button>
+            
+            <AnimatePresence>
+              {isCategoryOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  style={{
+                    position: 'absolute', top: '100%', right: 0, width: '280px', marginTop: '8px',
+                    backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px',
+                    boxShadow: '0 20px 50px var(--color-shadow)', zIndex: 100, overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ padding: '12px 12px 8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--color-border)',
+                        fontSize: '13px', outline: 'none', backgroundColor: 'var(--color-bg-app)',
+                        color: 'var(--color-text-main)', boxSizing: 'border-box'
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                  <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                    <div
+                      onClick={() => { onCategoryChange?.(null); setIsCategoryOpen(false); }}
+                      style={{
+                        padding: '10px 16px', fontSize: '13px', fontWeight: selectedCategory === null ? '700' : '500',
+                        cursor: 'pointer', backgroundColor: selectedCategory === null ? 'var(--color-bg-hover)' : 'transparent',
+                        color: selectedCategory === null ? 'var(--color-primary)' : 'var(--color-text-main)',
+                        borderBottom: '1px solid var(--color-border)'
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = selectedCategory === null ? 'var(--color-bg-hover)' : 'transparent'; }}
+                    >
+                      All Categories
+                    </div>
+                    {[...CATEGORIES]
+                      .sort((a, b) => a.localeCompare(b))
+                      .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+                      .map(cat => (
+                      <div
+                        key={cat}
+                        onClick={() => { onCategoryChange?.(cat); setIsCategoryOpen(false); }}
+                        style={{
+                          padding: '10px 16px', fontSize: '13px', fontWeight: selectedCategory === cat ? '700' : '500',
+                          cursor: 'pointer', backgroundColor: selectedCategory === cat ? 'var(--color-bg-hover)' : 'transparent',
+                          color: selectedCategory === cat ? 'var(--color-primary)' : 'var(--color-text-main)'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = selectedCategory === cat ? 'var(--color-bg-hover)' : 'transparent'; }}
+                      >
+                        {cat}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div style={{ position: 'relative' }}>
             <button 
-              onClick={() => { setIsStatusOpen(!isStatusOpen); setIsScoreOpen(false); }}
+              onClick={() => { setIsStatusOpen(!isStatusOpen); setIsScoreOpen(false); setIsCategoryOpen(false); }}
               style={styles.select}
             >
               <Filter size={14} color="var(--color-primary)" />
@@ -439,7 +558,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
 
           <div style={{ position: 'relative' }}>
             <button 
-              onClick={() => { setIsScoreOpen(!isScoreOpen); setIsStatusOpen(false); }}
+              onClick={() => { setIsScoreOpen(!isScoreOpen); setIsStatusOpen(false); setIsCategoryOpen(false); }}
               style={styles.select}
             >
               <TrendingUp size={14} color="var(--color-primary)" />
@@ -526,6 +645,7 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
                 <th style={{ ...styles.th, ...styles.stickyHeader1, width: '150px', minWidth: '150px' }}>Date</th>
                 <th style={{ ...styles.th, ...styles.stickyHeader2, width: '180px', minWidth: '180px' }}>Agent</th>
                 <th style={{ ...styles.th, ...styles.stickyHeader3, minWidth: '240px' }}>Lead Details</th>
+                <th style={styles.th}>Category</th>
                 <th style={styles.th}>Contact Info</th>
                 <th style={styles.th}>Score</th>
                 <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
@@ -592,7 +712,20 @@ export default function LeadDashboard({ onAnalyze, onViewDetails, refreshTrigger
                         </div>
                       </div>
                     </td>
-
+                    <td style={styles.td}>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '600', 
+                        backgroundColor: 'var(--color-bg-hover)', 
+                        color: 'var(--color-text-main)', 
+                        padding: '6px 10px', 
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        display: 'inline-block'
+                      }}>
+                        {lead.category || 'Other'}
+                      </span>
+                    </td>
                     <td style={styles.td}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ color: 'var(--color-text-main)', fontSize: '13px', fontWeight: '600' }}>{lead.email}</span>

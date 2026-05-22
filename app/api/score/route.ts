@@ -17,6 +17,8 @@ const scoreSchema = z.object({
   employeeCount: z.string().nullish()
     .or(z.number().transform(n => String(n)))
     .transform(v => v ?? undefined),
+  company: z.string().nullish().transform(v => v ?? undefined),
+  industry: z.string().nullish().transform(v => v ?? undefined),
 });
 
 export async function POST(req: NextRequest) {
@@ -44,7 +46,9 @@ export async function POST(req: NextRequest) {
       lastName,
       email,
       phone,
-      employeeCount
+      employeeCount,
+      company,
+      industry
     } = validation.data;
 
     let enrichedLeadData: Partial<LeadData> = {
@@ -54,7 +58,9 @@ export async function POST(req: NextRequest) {
       lastName,
       email,
       phone,
-      employeeCount
+      employeeCount,
+      company,
+      industry
     };
 
     // If leadId is provided, fetch latest data from DB to ensure accuracy
@@ -71,6 +77,8 @@ export async function POST(req: NextRequest) {
             jobTitle: lead.jobTitle || enrichedLeadData.jobTitle,
             category: lead.category || enrichedLeadData.category,
             employeeCount: lead.employeeCount || enrichedLeadData.employeeCount,
+            company: lead.company || enrichedLeadData.company,
+            industry: lead.industry || enrichedLeadData.industry,
           };
         }
       } catch (err) {

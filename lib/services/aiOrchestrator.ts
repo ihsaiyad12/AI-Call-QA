@@ -13,16 +13,40 @@ export const scoreCall = async (
   provider: AIProvider,
   leadData?: Partial<LeadData>
 ): Promise<AnalysisResult> => {
+  let result: AnalysisResult;
+
   switch (provider) {
     case PROVIDERS.GROQ:
-      return await scoreWithGroq(transcript, leadData);
+      result = await scoreWithGroq(transcript, leadData);
+      break;
     case PROVIDERS.GEMINI:
-      return await scoreWithGemini(transcript, leadData);
+      result = await scoreWithGemini(transcript, leadData);
+      break;
     case PROVIDERS.OPENAI:
-      return await scoreWithOpenAI(transcript, leadData);
+      result = await scoreWithOpenAI(transcript, leadData);
+      break;
     case PROVIDERS.CLAUDE:
-      return await scoreWithClaude(transcript, leadData);
+      result = await scoreWithClaude(transcript, leadData);
+      break;
     default:
       throw new Error(`Unsupported AI provider: ${provider}`);
   }
+
+  // Prepend the ICP category to analyst notes (reasoning) for HR campaigns
+  if (leadData?.category?.toLowerCase() === 'hr') {
+    const icp = result.icp_category || 'No ICP Match';
+    if (!result.icp_category) {
+      result.icp_category = icp;
+    }
+    const prefix = `Lead falls under: ${icp}. `;
+    if (result.reasoning) {
+      if (!result.reasoning.includes('Lead falls under:')) {
+        result.reasoning = `${prefix}${result.reasoning}`;
+      }
+    } else {
+      result.reasoning = prefix;
+    }
+  }
+
+  return result;
 };

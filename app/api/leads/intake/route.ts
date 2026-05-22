@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, email, phone, category, employeeCount, jobTitle } = body;
+    const { firstName, lastName, email, phone, category, employeeCount, jobTitle, company, industry } = body;
 
     if (!firstName || !lastName || !email || !phone || !category || !employeeCount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -88,6 +88,8 @@ export async function POST(req: Request) {
       category, 
       employeeCount, 
       jobTitle: jobTitle?.trim(),
+      company: company?.trim() || null,
+      industry: industry?.trim() || null,
       addedBy: session.user.name,
       status: 'PENDING',
       createdAtEST
@@ -135,7 +137,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
-    const { id, firstName, lastName, email, phone, category, employeeCount, jobTitle } = body;
+    const { id, firstName, lastName, email, phone, category, employeeCount, jobTitle, company, industry } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 });
@@ -196,7 +198,9 @@ export async function PATCH(req: Request) {
       phone: phone?.trim(),
       category,
       employeeCount,
-      jobTitle: jobTitle?.trim()
+      jobTitle: jobTitle?.trim(),
+      company: company?.trim() || null,
+      industry: industry?.trim() || null
     });
 
     eventEmitter.emit('update-lead', updatedLead);

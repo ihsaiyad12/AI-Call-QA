@@ -20,6 +20,8 @@ export const db = {
       category: string;
       employeeCount: string;
       jobTitle?: string;
+      company?: string | null;
+      industry?: string | null;
       transcript?: string;
       verdict?: string;
       score?: number;
@@ -30,6 +32,7 @@ export const db = {
       timeline?: number;
       industry_fit?: number;
       risk_level?: string;
+      icp_category?: string;
       status?: string;
       addedBy?: string;
       aiProvider?: string;
@@ -53,6 +56,8 @@ export const db = {
       category:       string;
       employeeCount:  string;
       jobTitle:       string;
+      company:        string | null;
+      industry:       string | null;
       transcript:     string;
       verdict:        string;
       score:          number;
@@ -63,6 +68,7 @@ export const db = {
       timeline:       number;
       industry_fit:   number;
       risk_level:     string;
+      icp_category:   string;
       status:         string;
       emailStatus:    string;
       emailStatusRaw: string;

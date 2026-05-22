@@ -15,8 +15,12 @@ export async function GET(req: Request) {
 
     const start = parseDateParam(startDateParam);
     const end = parseDateParam(endDateParam);
+    const category = searchParams.get('category');
     
     const baseQuery: any = { isDeleted: { $ne: true } };
+    if (category) {
+      baseQuery.category = category;
+    }
     if (start || end) {
       baseQuery.createdAt = {};
       if (start) {

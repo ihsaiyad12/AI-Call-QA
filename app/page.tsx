@@ -30,6 +30,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState<'analytics' | 'dashboard' | 'analyzer' | 'details' | 'users'>('analytics');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('groq');
@@ -51,6 +52,8 @@ export default function Home() {
     employeeCount: '',
     jobTitle: '',
     aiProvider: '',
+    company: '',
+    industry: '',
   });
   const [processingState, setProcessingState] = useState<ProcessingState>({
     type: '',
@@ -78,6 +81,8 @@ export default function Home() {
       employeeCount: lead.employeeCount,
       jobTitle: lead.jobTitle || '',
       aiProvider: lead.aiProvider || '',
+      company: lead.company || '',
+      industry: lead.industry || '',
     });
     if (lead.aiProvider) {
       setSelectedProvider(lead.aiProvider as AIProvider);
@@ -253,6 +258,18 @@ export default function Home() {
     setEmailStatus(null);
     setSelectedLeadId(null);
     setSelectedLeadStatus(null);
+    setLeadData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '+1',
+      category: 'Other',
+      employeeCount: '',
+      jobTitle: '',
+      aiProvider: '',
+      company: '',
+      industry: '',
+    });
   };
 
   const handleViewDetails = (lead: any) => {
@@ -268,6 +285,7 @@ export default function Home() {
       timeline: lead.timeline,
       industry_fit: lead.industry_fit,
       risk_level: lead.risk_level,
+      icp_category: lead.icp_category,
     });
     setTranscript(lead.transcript || '');
     setLeadData({
@@ -279,6 +297,8 @@ export default function Home() {
       employeeCount: lead.employeeCount,
       jobTitle: lead.jobTitle || '',
       aiProvider: lead.aiProvider || '',
+      company: lead.company || '',
+      industry: lead.industry || '',
     });
     setLeadId(lead.id);
     setActiveView('details');
@@ -380,13 +400,15 @@ export default function Home() {
         <main>
           {/* Analytics & Leads are always mounted but hidden via CSS — prevents re-fetching */}
           <div style={{ display: activeView === 'analytics' ? 'block' : 'none' }}>
-            <AnalyticsDashboard isVisible={activeView === 'analytics'} refreshTrigger={refreshTrigger} isCollapsed={isSidebarCollapsed} />
+            <AnalyticsDashboard isVisible={activeView === 'analytics'} refreshTrigger={refreshTrigger} isCollapsed={isSidebarCollapsed} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
           </div>
           <div style={{ display: activeView === 'dashboard' ? 'block' : 'none' }}>
             <LeadDashboard 
               onAnalyze={handleAnalyzeFromDashboard} 
               onViewDetails={handleViewDetails} 
               refreshTrigger={refreshTrigger}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
             />
           </div>
 

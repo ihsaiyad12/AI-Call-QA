@@ -20,6 +20,8 @@ Lead Information (from Database):
 - First Name: ${leadData.firstName || 'N/A'}
 - Last Name: ${leadData.lastName || 'N/A'}
 - Email: ${leadData.email || 'N/A'}
+- Company Name: ${leadData.company || 'N/A'}
+- Industry: ${leadData.industry || 'N/A'}
 - Job Title: ${leadData.jobTitle || 'N/A'}
 - Employee Size: ${leadData.employeeCount || 'N/A'}
 - Phone Number: ${leadData.phone || 'N/A'}

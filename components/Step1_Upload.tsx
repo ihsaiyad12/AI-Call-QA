@@ -102,6 +102,8 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
       employeeCount: lead.employeeCount,
       jobTitle: lead.jobTitle || '',
       aiProvider: lead.aiProvider || '',
+      company: lead.company || '',
+      industry: lead.industry || '',
     });
     if (lead.aiProvider) {
       setSelectedProvider(lead.aiProvider as AIProvider);
@@ -113,7 +115,7 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
   const handleClearSelection = () => {
     setSelectedLeadId(null);
     setSelectedLeadStatus(null);
-    setLeadData({ firstName: '', lastName: '', email: '', phone: '+1', category: 'Other', employeeCount: '', jobTitle: '' });
+    setLeadData({ firstName: '', lastName: '', email: '', phone: '+1', category: 'Other', employeeCount: '', jobTitle: '', company: '', industry: '' });
     setSearchQuery('');
   };
 
@@ -143,6 +145,7 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
   };
 
   const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const isHr = leadData.category?.toLowerCase() === 'hr';
   const isLeadValid = 
     leadData.firstName?.trim() && 
     leadData.lastName?.trim() && 
@@ -150,7 +153,8 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
     EMAIL_REGEX.test(leadData.email.trim()) &&
     leadData.phone?.length === 12 && 
     parseInt(leadData.employeeCount) > 0 && 
-    leadData.jobTitle?.trim();
+    leadData.jobTitle?.trim() &&
+    (!isHr || (leadData.company?.trim() && leadData.industry?.trim()));
   const isFormValid = isLeadValid && (useManualTranscript ? manualTranscript.length > 50 : audioFile !== null);
 
   const isReadOnly = !!selectedLeadId;
@@ -284,6 +288,19 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
               <label style={styles.label}>Job Title *</label>
               <input type="text" name="jobTitle" value={leadData.jobTitle} onChange={handleLeadChange} style={{ ...styles.input, ...(isReadOnly && styles.readOnly) }} placeholder="e.g. Managing Partner" readOnly={isReadOnly} />
             </div>
+
+            {leadData.category?.toLowerCase() === 'hr' && (
+              <div style={{ ...styles.leadGrid, marginTop: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Company Name *</label>
+                  <input type="text" name="company" value={leadData.company || ''} onChange={handleLeadChange} style={{ ...styles.input, ...(isReadOnly && styles.readOnly) }} placeholder="e.g. Acme Corp" readOnly={isReadOnly} />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Industry *</label>
+                  <input type="text" name="industry" value={leadData.industry || ''} onChange={handleLeadChange} style={{ ...styles.input, ...(isReadOnly && styles.readOnly) }} placeholder="e.g. Healthcare, Retail" readOnly={isReadOnly} />
+                </div>
+              </div>
+            )}
 
             <div style={{ ...styles.leadGrid, marginTop: '16px' }}>
               <div style={styles.formGroup}>
