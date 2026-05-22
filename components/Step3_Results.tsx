@@ -19,6 +19,8 @@ interface LeadData {
   employeeCount: string;
   jobTitle: string;
   aiProvider?: string;
+  company?: string | null;
+  industry?: string | null;
 }
 
 interface Step3ResultsProps {
@@ -232,6 +234,16 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                     🎯 {analysisResult.icp_category}
                   </span>
                 )}
+                {leadData.category?.toLowerCase() === 'hr' && leadData.company && (
+                  <span style={styles.metaChip}>
+                    💼 <strong>Company:</strong> {leadData.company}
+                  </span>
+                )}
+                {leadData.category?.toLowerCase() === 'hr' && leadData.industry && (
+                  <span style={styles.metaChip}>
+                    🏢 <strong>Industry:</strong> {leadData.industry}
+                  </span>
+                )}
                 {leadData.aiProvider && (
                   <span style={{ ...styles.metaChip, background: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-primary)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
                     🤖 {leadData.aiProvider}
@@ -323,6 +335,53 @@ const Step3_Results: React.FC<Step3ResultsProps> = ({
                   </div>
                 ))}
               </div>
+
+              {leadData.category?.toLowerCase() === 'hr' && (leadData.company || leadData.industry) && (
+                <div style={{
+                  marginTop: '24px',
+                  paddingTop: '20px',
+                  borderTop: '1px solid var(--color-border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-muted)' }}>
+                    HR Context Details
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {leadData.company && (
+                      <div style={{
+                        padding: '12px',
+                        borderRadius: '10px',
+                        backgroundColor: 'var(--color-bg-hover)',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Company Name
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--color-text-main)' }}>
+                          {leadData.company}
+                        </div>
+                      </div>
+                    )}
+                    {leadData.industry && (
+                      <div style={{
+                        padding: '12px',
+                        borderRadius: '10px',
+                        backgroundColor: 'var(--color-bg-hover)',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Industry
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--color-text-main)' }}>
+                          {leadData.industry}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* CRM Push */}

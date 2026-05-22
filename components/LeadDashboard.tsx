@@ -306,7 +306,8 @@ export default function LeadDashboard({
     const lastName = lead.lastName || '';
     const email = lead.email || '';
     const phone = lead.phone || '';
-    const searchStr = `${firstName} ${lastName} ${email} ${phone}`.toLowerCase();
+    const addedBy = lead.addedBy || '';
+    const searchStr = `${firstName} ${lastName} ${email} ${phone} ${addedBy}`.toLowerCase();
     const matchesSearch = searchStr.includes(searchTerm.toLowerCase().trim());
     const matchesStatus = statusFilter === 'ALL' || lead.status === statusFilter;
     const matchesCategory = !selectedCategory || lead.category === selectedCategory;

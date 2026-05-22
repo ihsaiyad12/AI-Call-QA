@@ -156,6 +156,7 @@ export const db = {
           { firstName: regex },
           { lastName: regex },
           { phone: regex },
+          { addedBy: regex },
         ],
         isDeleted: { $ne: true },
         ...filter
