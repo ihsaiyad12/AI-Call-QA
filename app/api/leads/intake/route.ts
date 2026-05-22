@@ -5,6 +5,9 @@ import db from '@/lib/db';
 import axios from 'axios';
 import { eventEmitter } from '@/lib/events';
 
+// Keep track of emails currently being processed to prevent race conditions from concurrent clicks/requests
+const processingEmails = new Set<string>();
+
 function parseReoonStatus(data: any): string {
   const status: string = (data?.status ?? data?.data?.status ?? 'unknown').toLowerCase().trim();
   const labelMap: Record<string, string> = {
@@ -30,6 +33,7 @@ export const maxDuration = 60;
  * Runs Reoon email verification.
  */
 export async function POST(req: Request) {
+  let normalizedEmail = '';
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.name) {
@@ -43,13 +47,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // --- EMAIL VALIDATION & NORMALIZATION ---
+    const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const trimmedEmail = email ? String(email).trim() : '';
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 });
+    }
+    normalizedEmail = trimmedEmail.toLowerCase();
+
     // --- DUPLICATE CHECK ---
-    const existingLead = await db.lead.findOne({ email: email.toLowerCase().trim() });
+    const existingLead = await db.lead.findOne({ email: normalizedEmail });
     if (existingLead) {
       return NextResponse.json({ 
         error: 'A lead with this email already exists in the system.' 
       }, { status: 409 });
     }
+
+    // --- CONCURRENCY LOCK ---
+    if (processingEmails.has(normalizedEmail)) {
+      return NextResponse.json({ 
+        error: 'This lead is already being processed. Please wait.' 
+      }, { status: 409 });
+    }
+    processingEmails.add(normalizedEmail);
 
     // Record time in EST
     const createdAtEST = new Date().toLocaleString("en-US", {
@@ -61,7 +81,13 @@ export async function POST(req: Request) {
 
     // Create lead with PENDING status
     const lead = await db.lead.create({
-      firstName, lastName, email: email.toLowerCase().trim(), phone, category, employeeCount, jobTitle,
+      firstName: firstName.trim(), 
+      lastName: lastName.trim(), 
+      email: normalizedEmail, 
+      phone: phone.trim(), 
+      category, 
+      employeeCount, 
+      jobTitle: jobTitle?.trim(),
       addedBy: session.user.name,
       status: 'PENDING',
       createdAtEST
@@ -88,6 +114,10 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Agent Intake Error:', error);
     return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
+  } finally {
+    if (normalizedEmail) {
+      processingEmails.delete(normalizedEmail);
+    }
   }
 }
 
@@ -96,6 +126,8 @@ export async function POST(req: Request) {
  * Allows an agent to update their own lead if it hasn't been analyzed yet.
  */
 export async function PATCH(req: Request) {
+  let normalizedEmail = '';
+  let lockedEmail = '';
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.name) {
@@ -127,15 +159,44 @@ export async function PATCH(req: Request) {
       }, { status: 400 });
     }
 
+    // --- EMAIL VALIDATION & NORMALIZATION & UNIQUE CHECK ---
+    normalizedEmail = lead.email;
+    if (email !== undefined) {
+      const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      const trimmedEmail = String(email).trim();
+      if (!EMAIL_REGEX.test(trimmedEmail)) {
+        return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 });
+      }
+      normalizedEmail = trimmedEmail.toLowerCase();
+
+      if (normalizedEmail !== lead.email) {
+        const existingDuplicate = await db.lead.findOne({ email: normalizedEmail });
+        if (existingDuplicate) {
+          return NextResponse.json({ 
+            error: 'A lead with this email already exists in the system.' 
+          }, { status: 409 });
+        }
+
+        // --- CONCURRENCY LOCK ---
+        if (processingEmails.has(normalizedEmail)) {
+          return NextResponse.json({ 
+            error: 'This email is currently being processed. Please wait.' 
+          }, { status: 409 });
+        }
+        processingEmails.add(normalizedEmail);
+        lockedEmail = normalizedEmail;
+      }
+    }
+
     // Update the lead
     const updatedLead = await db.lead.update(id, {
-      firstName,
-      lastName,
-      email: email?.toLowerCase().trim(),
-      phone,
+      firstName: firstName?.trim(),
+      lastName: lastName?.trim(),
+      email: normalizedEmail,
+      phone: phone?.trim(),
       category,
       employeeCount,
-      jobTitle
+      jobTitle: jobTitle?.trim()
     });
 
     eventEmitter.emit('update-lead', updatedLead);
@@ -143,5 +204,9 @@ export async function PATCH(req: Request) {
   } catch (error: any) {
     console.error('Agent Lead Update Error:', error);
     return NextResponse.json({ error: 'Failed to update lead' }, { status: 500 });
+  } finally {
+    if (lockedEmail) {
+      processingEmails.delete(lockedEmail);
+    }
   }
 }

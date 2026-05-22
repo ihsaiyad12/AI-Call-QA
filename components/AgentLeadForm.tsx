@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, CheckCircle2, Loader2, AlertCircle, 
   History, PlusCircle, Edit3, Lock, Search, RefreshCcw 
@@ -49,6 +49,8 @@ export default function AgentLeadForm() {
   const [submitState, setSubmitState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const isSubmitting = useRef(false);
+
   // Fetch agent's leads
   const fetchMyLeads = async () => {
     if (!session?.user?.name) return;
@@ -82,22 +84,41 @@ export default function AgentLeadForm() {
 
   const phoneDigits = leadData.phone.startsWith('+1') ? leadData.phone.slice(2) : leadData.phone;
 
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
   const isValid =
     leadData.firstName.trim() &&
     leadData.lastName.trim() &&
     leadData.email.trim() &&
+    EMAIL_REGEX.test(leadData.email.trim()) &&
     leadData.phone.length === 12 &&
     parseInt(leadData.employeeCount) > 0 &&
     leadData.jobTitle.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
     setSubmitState('loading');
     setErrorMsg('');
 
     try {
+      const sanitizedEmail = leadData.email.trim().toLowerCase();
+      if (!EMAIL_REGEX.test(sanitizedEmail)) {
+        throw new Error('Please enter a valid email address.');
+      }
+
       const method = editingId ? 'PATCH' : 'POST';
-      const payload = editingId ? { ...leadData, id: editingId } : leadData;
+      const payload = {
+        firstName: leadData.firstName.trim(),
+        lastName: leadData.lastName.trim(),
+        email: sanitizedEmail,
+        phone: leadData.phone.trim(),
+        category: leadData.category,
+        employeeCount: leadData.employeeCount,
+        jobTitle: leadData.jobTitle.trim(),
+        ...(editingId ? { id: editingId } : {})
+      };
 
       const res = await fetch('/api/leads/intake', {
         method,
@@ -120,6 +141,8 @@ export default function AgentLeadForm() {
     } catch (err: any) {
       setSubmitState('error');
       setErrorMsg(err.message || 'Something went wrong');
+    } finally {
+      isSubmitting.current = false;
     }
   };
 
@@ -266,7 +289,25 @@ export default function AgentLeadForm() {
                   <div style={{ ...styles.leadGrid, marginTop: '16px' }}>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>Email Address *</label>
-                      <input type="email" name="email" value={leadData.email} onChange={handleChange} style={styles.input} placeholder="john@company.com" />
+                      <input 
+                        type="email" 
+                        name="email" 
+                        value={leadData.email} 
+                        onChange={handleChange} 
+                        onBlur={() => {
+                          setLeadData(prev => ({ ...prev, email: prev.email.trim() }));
+                        }}
+                        style={{
+                          ...styles.input,
+                          borderColor: leadData.email && !EMAIL_REGEX.test(leadData.email.trim()) ? 'var(--color-red)' : 'var(--color-border)'
+                        }} 
+                        placeholder="john@company.com" 
+                      />
+                      {leadData.email && !EMAIL_REGEX.test(leadData.email.trim()) && (
+                        <span style={{ color: 'var(--color-red)', fontSize: '11px', marginTop: '4px' }}>
+                          Please enter a valid email address (no spaces allowed)
+                        </span>
+                      )}
                     </div>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>Phone Number *</label>

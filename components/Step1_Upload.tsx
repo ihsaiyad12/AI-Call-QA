@@ -142,7 +142,15 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
     if (file) setAudioFile(file);
   };
 
-  const isLeadValid = leadData.firstName && leadData.lastName && leadData.email && leadData.phone.length === 12 && parseInt(leadData.employeeCount) > 0 && leadData.jobTitle;
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const isLeadValid = 
+    leadData.firstName?.trim() && 
+    leadData.lastName?.trim() && 
+    leadData.email?.trim() && 
+    EMAIL_REGEX.test(leadData.email.trim()) &&
+    leadData.phone?.length === 12 && 
+    parseInt(leadData.employeeCount) > 0 && 
+    leadData.jobTitle?.trim();
   const isFormValid = isLeadValid && (useManualTranscript ? manualTranscript.length > 50 : audioFile !== null);
 
   const isReadOnly = !!selectedLeadId;
@@ -280,7 +288,29 @@ const Step1_Upload: React.FC<Step1UploadProps> = ({
             <div style={{ ...styles.leadGrid, marginTop: '16px' }}>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Email *</label>
-                <input type="email" name="email" value={leadData.email} onChange={handleLeadChange} style={{ ...styles.input, ...(isReadOnly && styles.readOnly) }} placeholder="john@company.com" readOnly={isReadOnly} />
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={leadData.email} 
+                  onChange={handleLeadChange} 
+                  onBlur={() => {
+                    if (!isReadOnly) {
+                      setLeadData((prev: any) => ({ ...prev, email: prev.email.trim() }));
+                    }
+                  }}
+                  style={{ 
+                    ...styles.input, 
+                    ...(isReadOnly && styles.readOnly),
+                    borderColor: !isReadOnly && leadData.email && !EMAIL_REGEX.test(leadData.email.trim()) ? 'var(--color-red)' : 'var(--color-border)'
+                  }} 
+                  placeholder="john@company.com" 
+                  readOnly={isReadOnly} 
+                />
+                {!isReadOnly && leadData.email && !EMAIL_REGEX.test(leadData.email.trim()) && (
+                  <span style={{ color: 'var(--color-red)', fontSize: '11px', marginTop: '4px' }}>
+                    Please enter a valid email address (no spaces allowed)
+                  </span>
+                )}
               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Phone *</label>

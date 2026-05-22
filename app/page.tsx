@@ -59,6 +59,7 @@ export default function Home() {
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isAnalyzing = useRef(false);
 
   const handleBackToDashboard = () => {
     setActiveView('dashboard');
@@ -93,16 +94,43 @@ export default function Home() {
   };
 
   const handleStartAnalysis = async () => {
+    if (isAnalyzing.current) return;
+    isAnalyzing.current = true;
+
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
 
     setCurrentStep(2);
-    setProcessingState({ type: 'transcribing', progress: 0, error: null });
+    setProcessingState({ type: 'initializing', progress: 0, error: null });
 
     let finalTranscript = '';
 
     try {
+      // 0. Pre-analysis check to ensure no lead with this email already exists in the system (Manual Entry only)
+      if (!selectedLeadId) {
+        setProcessingState({ type: 'initializing', progress: 10, error: null });
+        const normalizedEmail = leadData.email.trim().toLowerCase();
+        
+        // Query to check if lead already exists
+        const checkRes = await axios.get(`/api/leads?q=${encodeURIComponent(leadData.email.trim())}`, { signal });
+        const results = checkRes.data;
+        
+        const exists = Array.isArray(results) && results.some(
+          (l: any) => l.email.trim().toLowerCase() === normalizedEmail
+        );
+        
+        if (exists) {
+          setProcessingState({
+            type: '',
+            progress: 0,
+            error: 'A lead with this email already exists. Please search and select it instead.'
+          });
+          return;
+        }
+      }
+
       // 1. Transcribe
+      setProcessingState({ type: 'transcribing', progress: 0, error: null });
       if (useManualTranscript) {
         finalTranscript = manualTranscript;
         setTranscript(finalTranscript);
@@ -208,6 +236,8 @@ export default function Home() {
       console.error('App Pipeline Error:', error);
       const errorMessage = error.response?.data?.error || error.message || 'An unexpected error occurred';
       setProcessingState(prev => ({ ...prev, error: errorMessage }));
+    } finally {
+      isAnalyzing.current = false;
     }
   };
 

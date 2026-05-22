@@ -3,6 +3,9 @@ import db from '@/lib/db';
 import axios from 'axios';
 import { eventEmitter } from '@/lib/events';
 
+// Keep track of emails currently being processed to prevent race conditions from concurrent clicks/requests
+const processingEmails = new Set<string>();
+
 // Reoon status field → human-readable label
 function parseReoonStatus(data: any): string {
   const status: string = (data?.status ?? data?.data?.status ?? 'unknown').toLowerCase().trim();
@@ -92,6 +95,7 @@ export async function GET(req: Request) {
  * Creates a fully analyzed lead (used when no existing lead was selected).
  */
 export async function POST(req: Request) {
+  let normalizedEmail = '';
   try {
     const body = await req.json();
     const { 
@@ -99,6 +103,35 @@ export async function POST(req: Request) {
       transcript, verdict: rawVerdict, score, reasoning, status, aiProvider, addedBy,
       intent, authority, demo_commitment, timeline, industry_fit, risk_level
     } = body;
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
+    }
+
+    // --- EMAIL VALIDATION & NORMALIZATION ---
+    const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const trimmedEmail = String(email).trim();
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 });
+    }
+    normalizedEmail = trimmedEmail.toLowerCase();
+
+    // 1. Check for existing lead to prevent duplicates (Reject with 409 Conflict)
+    const existingLead = await db.lead.findOne({ email: normalizedEmail });
+
+    if (existingLead) {
+      return NextResponse.json({ 
+        error: 'A lead with this email already exists. Please search and select it instead.' 
+      }, { status: 409 });
+    }
+
+    // --- CONCURRENCY LOCK ---
+    if (processingEmails.has(normalizedEmail)) {
+      return NextResponse.json({ 
+        error: 'This lead is already being processed. Please wait.' 
+      }, { status: 409 });
+    }
+    processingEmails.add(normalizedEmail);
 
     // Normalize verdict to exact DB enum values
     const normalizeVerdict = (v: string | null | undefined): string | undefined => {
@@ -129,7 +162,6 @@ export async function POST(req: Request) {
     }
 
     // Normalize AI provider
-    // Normalize AI provider
     const finalAiProvider = aiProvider || 'groq';
 
     // Record time in EST
@@ -144,32 +176,15 @@ export async function POST(req: Request) {
       hour12: true
     });
 
-    // 1. Check for existing lead to prevent duplicates (Upsert logic)
-    const normalizedEmail = email.toLowerCase().trim();
-    const existingLead = await db.lead.findOne({ email: normalizedEmail });
-
-    if (existingLead) {
-      console.log(`[Leads] Found existing lead for ${normalizedEmail}, updating instead of creating duplicate.`);
-      
-      const updated = await db.lead.update(existingLead.id, {
-        firstName, lastName, phone, category, employeeCount, jobTitle, 
-        transcript, verdict, score: finalScore, reasoning, 
-        intent: nIntent, authority: nAuthority, demo_commitment: nDemo, timeline: nTimeline, industry_fit: nIndustry, risk_level,
-        status: status || 'ANALYZED',
-        aiProvider: finalAiProvider,
-        // addedBy is EXPLICITLY OMITTED here to preserve the original creator
-      }) as any;
-
-      // Still trigger email verification if it wasn't done or if we want to refresh it
-      // (Optional: you could skip this if existingLead.emailStatus is already set)
-      
-      eventEmitter.emit('update-lead', updated);
-      return NextResponse.json(updated);
-    }
-
     // 2. Create new lead if it doesn't exist
     const lead = await db.lead.create({ 
-      firstName, lastName, email: normalizedEmail, phone, category, employeeCount, jobTitle, 
+      firstName: firstName?.trim(), 
+      lastName: lastName?.trim(), 
+      email: normalizedEmail, 
+      phone: phone?.trim(), 
+      category, 
+      employeeCount, 
+      jobTitle: jobTitle?.trim(), 
       transcript, verdict, score: finalScore, reasoning, 
       intent: nIntent, authority: nAuthority, demo_commitment: nDemo, timeline: nTimeline, industry_fit: nIndustry, risk_level,
       status: status || 'ANALYZED',
@@ -210,5 +225,9 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Create Lead Error:', error);
     return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
+  } finally {
+    if (normalizedEmail) {
+      processingEmails.delete(normalizedEmail);
+    }
   }
 }
