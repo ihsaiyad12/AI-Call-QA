@@ -40,6 +40,8 @@ export default function LeadDashboard({
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const categoryRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
 
   const handleDeleteLead = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete lead "${name}"? This action will hide it from the application but preserve it securely in the database.`)) {
@@ -70,11 +72,17 @@ export default function LeadDashboard({
     setTodayStats({ analyzed: analyzedCount, pushed: pushedCount, pending: pendingCount });
   }, [leads]);
 
-  // Close category dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
         setIsCategoryOpen(false);
+      }
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+        setIsStatusOpen(false);
+      }
+      if (scoreRef.current && !scoreRef.current.contains(e.target as Node)) {
+        setIsScoreOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -427,6 +435,7 @@ export default function LeadDashboard({
             endDate={endDate}
             onRangeChange={handleRangeChange}
             label={dateRangeLabel}
+            align="left"
           />
 
           {/* Category Filter Dropdown */}
@@ -517,7 +526,7 @@ export default function LeadDashboard({
             </AnimatePresence>
           </div>
 
-          <div style={{ position: 'relative' }}>
+          <div ref={statusRef} style={{ position: 'relative' }}>
             <button 
               onClick={() => { setIsStatusOpen(!isStatusOpen); setIsScoreOpen(false); setIsCategoryOpen(false); }}
               style={styles.select}
@@ -557,7 +566,7 @@ export default function LeadDashboard({
             </AnimatePresence>
           </div>
 
-          <div style={{ position: 'relative' }}>
+          <div ref={scoreRef} style={{ position: 'relative' }}>
             <button 
               onClick={() => { setIsScoreOpen(!isScoreOpen); setIsStatusOpen(false); setIsCategoryOpen(false); }}
               style={styles.select}

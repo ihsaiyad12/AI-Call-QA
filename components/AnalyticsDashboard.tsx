@@ -59,6 +59,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const categoryRef = React.useRef<HTMLDivElement>(null);
+  const sortRef = React.useRef<HTMLDivElement>(null);
   const rowsPerPage = 15;
 
   const getLocalDateString = (d: Date) => {
@@ -117,11 +118,14 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
     }
   }, [refreshTrigger]);
 
-  // Close category dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
         setIsCategoryOpen(false);
+      }
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setIsSortOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -342,6 +346,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
             endDate={endDate}
             onRangeChange={handleRangeChange}
             label={dateRangeLabel}
+            align="right"
           />
           <button style={styles.exportButton} onClick={downloadExcel} title="Export to Excel">
             <Download size={14} />
@@ -638,7 +643,7 @@ export default function AnalyticsDashboard({ isVisible = true, refreshTrigger = 
         <motion.div variants={itemVariants} style={{ ...styles.sectionCard, gridColumn: 'span 3', padding: '0', marginTop: '12px' }}>
           <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={styles.sectionTitle}>Agent Performance Matrix</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+            <div ref={sortRef} style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
               <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Sort by</span>
               <div
                 onClick={() => setIsSortOpen(!isSortOpen)}

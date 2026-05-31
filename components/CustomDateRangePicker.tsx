@@ -9,6 +9,7 @@ interface CustomDateRangePickerProps {
   endDate: string; // YYYY-MM-DD
   onRangeChange: (start: string, end: string, label: string) => void;
   label: string;
+  align?: 'left' | 'right';
 }
 
 const PRESETS = [
@@ -20,7 +21,7 @@ const PRESETS = [
   { val: 'custom', label: 'Custom Range' },
 ];
 
-export default function CustomDateRangePicker({ startDate, endDate, onRangeChange, label }: CustomDateRangePickerProps) {
+export default function CustomDateRangePicker({ startDate, endDate, onRangeChange, label, align = 'right' }: CustomDateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -113,7 +114,10 @@ export default function CustomDateRangePicker({ startDate, endDate, onRangeChang
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            style={styles.popover}
+            style={{
+              ...styles.popover,
+              ...(align === 'left' ? { left: 0 } : { right: 0 }),
+            }}
           >
             <div style={styles.popoverContent}>
               {/* Sidebar Presets */}
@@ -229,7 +233,6 @@ const styles: Record<string, React.CSSProperties> = {
   popover: {
     position: 'absolute', 
     top: 'calc(100% + 12px)', 
-    right: 0, 
     background: 'var(--color-bg-card)', 
     borderRadius: '20px', 
     boxShadow: '0 20px 50px -12px var(--color-shadow)', 
@@ -237,6 +240,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden', 
     border: '1px solid var(--color-border)',
     width: '540px',
+    maxWidth: 'calc(100vw - 32px)',
   },
   popoverContent: {
     display: 'flex',
