@@ -1,14 +1,10 @@
-import mongoose from 'mongoose';
+require('dotenv').config();
+const mongoose = require('mongoose');
 
-/**
- * MongoDB connection singleton for Next.js serverless functions.
- * Prevents multiple connections during hot reloads or frequent invocations.
- */
-
+// Sourced from lib/mongodb.ts
 let MONGODB_URI = process.env.MONGODB_URI;
 
-// Helper to construct sandbox database URI by suffixing the db name
-function getDummyUri(uri: string): string {
+function getDummyUri(uri) {
   try {
     const protocolIdx = uri.indexOf("://");
     if (protocolIdx === -1) return uri + "_dummy";
@@ -16,7 +12,6 @@ function getDummyUri(uri: string): string {
     const afterProtocol = uri.substring(protocolIdx + 3);
     const slashIdx = afterProtocol.indexOf("/");
     if (slashIdx === -1) {
-      // Append database name directly if no slash exists
       return uri + "/Call_QA_dummy";
     }
     
@@ -41,6 +36,7 @@ function getDummyUri(uri: string): string {
 }
 
 const useDummy = process.env.NEXT_PUBLIC_USE_DUMMY_DB === 'true' || process.env.USE_DUMMY_DB === 'true';
+console.log('useDummy flag:', useDummy);
 
 if (useDummy) {
   if (process.env.MONGODB_URI_DUMMY) {
@@ -50,45 +46,25 @@ if (useDummy) {
   }
 }
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env');
-}
+console.log('Selected connection URI:', MONGODB_URI);
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections from growing exponentially
- * during API Route usage.
- */
-let cached = (global as any).mongoose;
-
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
-}
-
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      console.log('✅ MongoDB Connected');
-      return mongoose;
-    });
-  }
-
+async function testConnection() {
   try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ Connection Successful!');
+    console.log('Connected Database Name:', mongoose.connection.name);
+    
+    if (mongoose.connection.name.endsWith('_dummy')) {
+      console.log('🎉 Verification Success: Securely redirected to dummy database!');
+    } else {
+      console.error('❌ Verification Failure: Database does not end with _dummy!');
+    }
+  } catch (err) {
+    console.error('Connection failed:', err);
+  } finally {
+    await mongoose.disconnect();
+    console.log('Disconnected.');
   }
-
-  return cached.conn;
 }
 
-export default dbConnect;
+testConnection();

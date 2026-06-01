@@ -237,3 +237,23 @@ input:focus, textarea:focus {
 .analyze-btn:active {
   transform: scale(0.98);
 }
+
+/* Pulsing Animation for Sandbox indicators */
+@keyframes pulse-sandbox {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.pulse-sandbox-dot {
+  animation: pulse-sandbox 2s infinite;
+}

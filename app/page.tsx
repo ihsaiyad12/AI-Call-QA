@@ -14,7 +14,7 @@ import UserManagement from '@/components/UserManagement';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AIProvider, AnalysisResult, ProcessingState } from '@/types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -304,6 +304,33 @@ export default function Home() {
     setActiveView('details');
   };
 
+  const [isResettingDb, setIsResettingDb] = useState(false);
+  const isSandbox = process.env.NEXT_PUBLIC_USE_DUMMY_DB === 'true';
+
+  const handleResetSandboxDb = async () => {
+    if (!confirm('Are you sure you want to clear and reset the sandbox database? All your changes will be reset.')) {
+      return;
+    }
+    setIsResettingDb(true);
+    try {
+      const res = await axios.post('/api/tester/db-reset');
+      if (res.data.success) {
+        alert('Sandbox database successfully restored!');
+        // Refresh the page data
+        setRefreshTrigger(prev => prev + 1);
+        resetApp();
+        setActiveView('analytics');
+      } else {
+        alert('Failed to reset: ' + (res.data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Error resetting database: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsResettingDb(false);
+    }
+  };
+
   const sidebarWidth = isSidebarCollapsed ? '80px' : '260px';
 
   return (
@@ -331,6 +358,79 @@ export default function Home() {
           paddingTop: activeView === 'details' ? '20px' : undefined
         }}
       >
+        {isSandbox && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.03) 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            borderRadius: '16px',
+            padding: '14px 24px',
+            marginBottom: '28px',
+            boxShadow: '0 8px 32px rgba(139, 92, 246, 0.02)',
+            backdropFilter: 'blur(10px)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span className="pulse-sandbox-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-text-main)' }}>
+                🧪 Sandbox Active: Connected to <code style={{ fontFamily: 'monospace', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-primary)' }}>Call_QA_dummy</code>
+              </span>
+            </div>
+            <button 
+              onClick={handleResetSandboxDb}
+              disabled={isResettingDb}
+              style={{
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                color: 'var(--color-primary)',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+                e.currentTarget.style.color = 'var(--color-primary)';
+              }}
+            >
+              Reset Sandbox Data
+            </button>
+          </div>
+        )}
+
+        {isResettingDb && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}>
+            <Loader2 size={48} className="spin" style={{ color: 'var(--color-primary)', marginBottom: '16px' }} />
+            <p style={{ color: 'var(--color-text-main)', fontSize: '18px', fontWeight: '800' }}>
+              Restoring Sandbox Database...
+            </p>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginTop: '8px' }}>
+              Seeding default users and leads dataset
+            </p>
+          </div>
+        )}
         <header style={{ 
           marginBottom: (activeView === 'dashboard' || activeView === 'analytics' || activeView === 'analyzer') ? '0' : '24px',
           marginTop: 0 

@@ -125,8 +125,15 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const isSandbox = process.env.NEXT_PUBLIC_USE_DUMMY_DB === 'true';
+
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.container,
+      flexDirection: isSandbox ? 'row' : 'column',
+      flexWrap: 'wrap',
+      gap: '40px',
+    }}>
       {/* Abstract Background Decoration */}
       <div style={styles.bgBlob1} />
       <div style={styles.bgBlob2} />
@@ -144,6 +151,50 @@ export default function LoginPage() {
           Contact support for access issues.
         </p>
       </div>
+
+      {isSandbox && (
+        <div className="card fade-in" style={styles.sandboxCard}>
+          <div style={styles.sandboxHeader}>
+            <div className="pulse-sandbox-dot" style={styles.sandboxDot} />
+            <h3 className="outfit-font" style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--color-primary)' }}>
+              Sandbox Mode Active
+            </h3>
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '20px', lineHeight: '1.5' }}>
+            You are connected to the dummy database <code style={styles.codeInline}>Call_QA_dummy</code>. Use these pre-seeded accounts to test different roles:
+          </p>
+
+          <div style={styles.credentialsList}>
+            <div style={styles.credentialRow}>
+              <div style={styles.roleHeader}>🔑 Super Admin (Full Control)</div>
+              <div style={styles.credentialDetail}>
+                <div><strong>Username:</strong> <code style={styles.code}>admin</code></div>
+                <div><strong>Password:</strong> <code style={styles.code}>admin@523523</code></div>
+              </div>
+            </div>
+
+            <div style={styles.credentialRow}>
+              <div style={styles.roleHeader}>📊 Quality Analyst (Review & Score)</div>
+              <div style={styles.credentialDetail}>
+                <div><strong>Username:</strong> <code style={styles.code}>analyst</code></div>
+                <div><strong>Password:</strong> <code style={styles.code}>analyst123</code></div>
+              </div>
+            </div>
+
+            <div style={styles.credentialRow}>
+              <div style={styles.roleHeader}>📞 Call Agent (Intake Form only)</div>
+              <div style={styles.credentialDetail}>
+                <div><strong>Username:</strong> <code style={styles.code}>agent</code></div>
+                <div><strong>Password:</strong> <code style={styles.code}>agent123</code></div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--color-text-dim)', textAlign: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '12px', lineHeight: '1.4' }}>
+            🧪 Pre-populated leads database is ready for analytics and search testing.
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -170,6 +221,76 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 10,
     position: 'relative',
     backdropFilter: 'blur(10px)',
+  },
+  sandboxCard: {
+    width: '100%',
+    maxWidth: '400px',
+    padding: '36px 30px',
+    backgroundColor: 'var(--color-bg-card)',
+    borderRadius: '24px',
+    border: '1px solid rgba(139, 92, 246, 0.25)',
+    boxShadow: '0 25px 50px -12px var(--color-shadow)',
+    zIndex: 10,
+    position: 'relative',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  sandboxHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '12px',
+  },
+  sandboxDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    backgroundColor: '#10b981',
+    boxShadow: '0 0 10px #10b981',
+  },
+  credentialsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  credentialRow: {
+    padding: '12px 14px',
+    backgroundColor: 'var(--color-bg-hover)',
+    borderRadius: '12px',
+    border: '1px solid var(--color-border)',
+  },
+  roleHeader: {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: 'var(--color-text-main)',
+    marginBottom: '6px',
+    letterSpacing: '-0.2px',
+  },
+  credentialDetail: {
+    fontSize: '12px',
+    color: 'var(--color-text-muted)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  code: {
+    fontFamily: 'monospace',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    color: 'var(--color-primary)',
+    fontWeight: '600',
+    fontSize: '12px',
+  },
+  codeInline: {
+    fontFamily: 'monospace',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: '2px 4px',
+    borderRadius: '4px',
+    color: 'var(--color-text-main)',
+    fontSize: '12px',
   },
   iconHeader: {
     display: 'flex',
